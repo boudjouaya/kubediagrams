@@ -1,4 +1,4 @@
-# JOUR 1
+# SEMAINE 1
 
 ## 1. État de l'art des outils RBAC Kubernetes
 
@@ -10,7 +10,7 @@ git clone https://github.com/alcideio/rbac-tool.git
 ```
 
 **Fonctionnalités**
-- Visualisation des politiques RBAC sous forme de graphe (`viz`)
+- Visualisation des politiques RBAC sous forme de graphe (`viz`) 
 - Analyse des permissions trop larges ou risquées (`analysis`)
 - Recherche des autorisations (`who-can`)
 - Génération automatique de rôles
@@ -140,13 +140,13 @@ diagrams.k8s.rbac.Group   # Group
 **Fonctions existantes dans `kube-diagrams`**
 ```python
 add_subjects()
-# → crée les flèches entre les ServiceAccounts/Users/Groups et les RoleBindings
+# crée les flèches entre les ServiceAccounts/Users/Groups et les RoleBindings
 
 add_role()
-# → crée la flèche entre un RoleBinding et son Role
+# crée la flèche entre un RoleBinding et son Role
 
 add_rules_resource_names()
-# → crée des flèches vers des ressources nommées explicitement dans les rules
+# crée des flèches vers des ressources nommées explicitement dans les rules
 #   (uniquement quand resourceNames est défini)
 ```
 
@@ -164,7 +164,7 @@ add_rules_resource_names()
 **Ce qui manque — le cas général non géré**
 ```yaml
 rules:
-- resources: ["pods", "secrets"]  # ← cas pas géré
+- resources: ["pods", "secrets"]  # cas pas géré
   verbs: ["get", "list"]
 ```
 
@@ -184,9 +184,7 @@ Créer une fonction `add_rules()` dans `kube-diagrams` qui :
 
 ---
 
-# JOUR 2
-
-## 3. Rappels sur le RBAC Kubernetes
+## 3. RBAC Kubernetes
 
 ### 3.1 Les verbes possibles
 
@@ -206,55 +204,75 @@ Créer une fonction `add_rules()` dans `kube-diagrams` qui :
 
 **Role**
 ```yaml
-kind: Role                        # c'est un badge de permissions
-name: mon-role                    # le nom du badge
-rules:                            # la liste des règles du badge
-  - resources: ["pods"]           # règle 1 : sur les pods
-    verbs: ["get", "list"]        # → on peut juste lire, pas modifier ni supprimer
-
-  - resources: ["secrets"]        # règle 2 : sur les secrets (mots de passe)
-    verbs: ["*"]                  # → on peut tout faire (dangereux !)
-
-  - resources: ["configmaps"]     # règle 3 : sur les configs
-    verbs: ["create", "update"]   # → on peut créer et modifier, mais pas supprimer
+kind: Role                                    # badge de permissions
+apiVersion: rbac.authorization.k8s.io/v1     # version de l'API RBAC
+metadata:                                     # informations d'identité
+  name: pod-reader                            # nom du badge
+  namespace: default                          # dans quel espace il s'applique
+rules:                                        # liste des règles du badge
+  - apiGroups: [""]                           # "" = groupe de base Kubernetes
+    resources: ["pods"]                       # règle 1 : sur les pods
+    verbs: ["get", "list"]                    # on peut juste lire, pas modifier ni supprimer
+  - apiGroups: [""]
+    resources: ["secrets"]                    # règle 2 : sur les secrets (mots de passe)
+    verbs: ["*"]                              # on peut tout faire (dangereux !)
+  - apiGroups: [""]
+    resources: ["configmaps"]                 # règle 3 : sur les configs
+    verbs: ["create", "update"]               # on peut créer et modifier, mais pas supprimer
 ```
 
 **ClusterRole**
 ```yaml
-kind: ClusterRole                 # pareil qu'un Role mais s'applique à tout le cluster
-name: mon-cluster-role
+kind: ClusterRole                             # pareil qu'un Role mais pour tout le cluster
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: cluster-reader                        # pas de namespace car c'est global
 rules:
-  - resources: ["nodes"]          # règle 1 : sur les serveurs physiques
-    verbs: ["get", "list"]        # → lecture seule (on ne veut pas qu'on supprime des serveurs !)
-
-  - resources: ["pods"]           # règle 2 : sur les applications
-    verbs: ["*"]                  # → droits complets sur tous les pods du cluster
+  - apiGroups: [""]
+    resources: ["nodes"]                      # règle 1 : sur les serveurs physiques
+    verbs: ["get", "list"]                    # lecture seule
+  - apiGroups: ["apps"]                       # "apps" = groupe pour les déploiements
+    resources: ["pods"]                       # règle 2 : sur les applications
+    verbs: ["*"]                              # droits complets sur tous les pods du cluster
 ```
 
 **RoleBinding**
 ```yaml
-kind: RoleBinding                 # c'est le lien entre des utilisateurs et un badge
-name: mon-binding
-subjects:                         # qui reçoit le badge (peut être plusieurs personnes)
-  - kind: ServiceAccount          # type : compte applicatif
-    name: asma                    # asma reçoit le badge
-  - kind: User                    # type : utilisateur humain
-    name: aya                 # aya reçoit aussi le badge
-roleRef:                          # quel badge on leur donne
-  kind: Role                      # c'est un Role (pas un ClusterRole)
-  name: mon-role                  # le badge s'appelle mon-role
+kind: RoleBinding                             # lien entre des utilisateurs et un badge
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: mon-binding
+  namespace: default                          # dans quel espace s'applique le binding
+subjects:                                     # qui reçoit le badge (peut être plusieurs)
+  - kind: ServiceAccount                      # type : compte applicatif
+    name: asma                                # asma reçoit le badge
+    namespace: default
+  - kind: User                                # type : utilisateur humain
+    name: aya                                 # aya reçoit aussi le badge
+    apiGroup: rbac.authorization.k8s.io
+roleRef:                                      # quel badge on leur donne
+  kind: Role                                  # c'est un Role (pas un ClusterRole)
+  name: pod-reader                            # le badge s'appelle pod-reader
+  apiGroup: rbac.authorization.k8s.io
 ```
 
 **ClusterRoleBinding**
 ```yaml
-kind: ClusterRoleBinding          # pareil mais à l'échelle du cluster entier
+kind: ClusterRoleBinding                      # pareil mais à l'échelle du cluster entier
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: mon-cluster-binding                   # pas de namespace car c'est global
 subjects:
-  - kind: Group                   # type : groupe d'utilisateurs
-    name: admins                  # tous les admins reçoivent le badge
+  - kind: Group                               # type : groupe d'utilisateurs
+    name: admins                              # tous les admins reçoivent le badge
+    apiGroup: rbac.authorization.k8s.io
 roleRef:
-  kind: ClusterRole               # c'est un ClusterRole cette fois
-  name: mon-cluster-role          # le badge cluster s'appelle mon-cluster-role
+  kind: ClusterRole                           # c'est un ClusterRole cette fois
+  name: cluster-reader                        # le badge cluster s'appelle cluster-reader
+  apiGroup: rbac.authorization.k8s.io
 ```
+
+écrit de façon simplifiée sinon mettre  - apiGroups: ["apps"]  # "apps" = groupe pour les déploiements ou apiGroups: [""] 
 
 ### 3.3 Récap visuel complet
 
@@ -276,11 +294,11 @@ roleRef:
 ### Pourquoi les PVC apparaissent sans être déclarés ?
 
 (exemple dans issues/issue#2) pq 6 objets alors que 4 créés ? 
-Dans un StatefulSet, le champ `volumeClaimTemplates` dit à Kubernetes de créer automatiquement un PVC pour chaque replica. KubeDiagrams lit ce champ et crée automatiquement le nœud PVC dans le diagramme via `add_volume_claim_templates()`. C'est une bonne inspiration pour `add_rules()` : lire les `rules` et créer automatiquement les nœuds ressources cibles.
+Dans un StatefulSet, le champ `volumeClaimTemplates` dit à Kubernetes de créer automatiquement un PVC pour chaque replica. KubeDiagrams lit ce champ et crée automatiquement le nœud PVC dans le diagramme via `add_volume_claim_templates()`.  bonne inspiration pour `add_rules()` : lire les `rules` et créer automatiquement les nœuds ressources cibles.
 
 ### Le fichier semiotics.yaml
 
-C'est le fichier de démonstration de KubeDiagrams qui montre un exemple de chaque type de ressource Kubernetes supportée. Le RBAC y est déjà présent mais les flèches entre les Roles et les ressources cibles sont absentes : ce que le projet doit ajouter.
+fichier de démonstration de KubeDiagrams qui montre un exemple de chaque type de ressource Kubernetes supportée. RBAC  déjà présent mais les flèches entre les Roles et les ressources cibles sont absentes : à ajouter.
 
 ---
 
@@ -289,7 +307,7 @@ C'est le fichier de démonstration de KubeDiagrams qui montre un exemple de chaq
 1. Tester KubeDiagrams sur `semiotics.yaml` pour voir le rendu actuel
 2. Comprendre en détail comment `add_rules_resource_names()` fonctionne
 3. Implémenter `add_rules()` dans `kube-diagrams`
-4. Ajouter l'appel à `add_rules()` dans `kube-diagrams.yaml` pour Role et ClusterRole
+4. Ajouter l'appel à `add_rules()` dans `kube-diagrams.yaml` (comment chaque ressource Kubernetes doit être visualisée) pour Role et ClusterRole
 5. Tester sur des fichiers YAML RBAC réels récupérés sur GitHub
 
 
@@ -297,3 +315,245 @@ C'est le fichier de démonstration de KubeDiagrams qui montre un exemple de chaq
 - https://github.com/philippemerle/KubeDiagrams
 - https://kubediagrams.lille.inria.fr
 - https://kubernetes.io/docs/reference/access-authn-authz/rbac/
+
+
+
+add_rules_resource_name() : crée des flèches entre un Role et des ressources nommées spécifiquement dans les rules (gère les resourceNames)
+
+
+add_rules() doit :
+- lire les rules du Role
+- Pour chaque ressource dans les rules (pods, secrets...)
+- Chercher si cette ressource existe dans le fichier YAML
+- Si oui → créer la flèche avec les verbes dessus
+- Si non → warning et on passe
+
+
+
+Représentation graphique :
+
+[ServiceAccount: asma] ──┐
+[User: aya]            ──┼──→ [RoleBinding: mon-binding] ──→ [Role: mon-role] ──get, list──→ [Pod]
+[Group: admins]        ──┘                                                    ──*──────────→ [Secret]
+                                                                              ──create────→ [ConfigMap]
+
+
+qst : 
+Que fait-on si la ressource cible n'existe pas dans le YAML ?
+Comment afficher * sur les flèches ?
+Que fait-on si resources: ["*"] ?
+
+
+institute.sfeir : RBAC fonctionne en deux étapes : (1) créez un Role qui liste les permissions, (2) créez un RoleBinding qui attribue ce Role à un utilisateur. Principe fondamental : accordez toujours le minimum de privilèges nécessaires.
+
+ici Role ne liste pas les permissions
+RoleBinding ok
+
+
+Fichiers intéressants pour nous : 
+dans rbac-tool :
+
+- cmd/visualize_cmd.go : définit la commande viz et ses options (modèle pour l'interface utilisateur)
+Comment définir des options en ligne de commande (--show-rules, --exclude-namespaces).
+Comment l'outil guide l'utilisateur (aide, exemples).
+C'est un modèle à suivre pour créer la nouvelle commande `kubediagrams rbac`.
+
+- pkg/rbac/subject_permissions.go : Utile pour comprendre comment les permissions sont liées aux sujets, mais sa logique interne est spécifique à RBAC Tool.
+fichier est utile pour comprendre comment RBAC Tool modélise les permissions en mémoire (SubjectPermissionsList, PolicyRule, etc.).donne des idées pour structurer les données extraits des YAML dans code Python.
+
+Version simplifiée en Python (pour comprendre)
+class Sujet:
+    def __init__(self, nom, namespace, type="ServiceAccount"):
+        self.nom = nom
+        self.namespace = namespace
+        self.type = type
+        self.permissions = []  # liste de (ressource, verbes)
+
+class Regle:
+    def __init__(self, ressource, verbes, api_group="core"):
+        self.ressource = ressource
+        self.verbes = verbes  # ["get", "list", "watch"]
+        self.api_group = api_group
+
+
+- pkg/visualize/rbacviz.go. : génération de diagrammes de RBAC Tool (contient la logique de création des nœuds et des arêtes)
+Il contient la fonction renderGraph() qui:
+Itère sur les RoleBindings.
+Crée les sous-graphes (Subgraph) pour les namespaces.
+Crée les nœuds pour les Sujets, les Bindings et les Rôles.
+Et surtout, il contient la logique pour afficher les règles (newFormattedRulesNode).
+À retenir: comment est construit le graphe à partir des données RBAC. Source d'inspiration pour la structure de notre code.
+
+equivalent en Python : 
+
+def render_rbac_graph(perms, show_rules=True):
+    g = Graph()
+    
+    for binding in perms.role_bindings:
+        ns = binding["namespace"]
+        
+        # Créer le nœud Binding
+        binding_node = create_binding_node(g, binding)
+        
+        # Créer le nœud Role
+        role_node = create_role_node(g, binding["roleRef"])
+        
+        # Arête Binding → Role
+        g.edge(binding_node, role_node, label="refers to")
+        
+        # Pour chaque Sujet
+        for subject in binding["subjects"]:
+            subject_node = create_subject_node(g, subject)
+            g.edge(subject_node, binding_node, label="bound to")
+        
+        # Si on affiche les règles
+        if show_rules:
+            for rule in role["rules"]:
+                for resource in rule["resources"]:
+                    resource_node = create_resource_node(g, resource)
+                    verbs = ",".join(rule["verbs"])
+                    g.edge(role_node, resource_node, label=verbs)
+    
+    return g
+
+
+
+
+Attribution de rôle : un utilisateur doit se voir attribuer un ou plusieurs rôles actifs pour pouvoir exercer des permissions ou des privilèges.
+
+Autorisation de rôle : l’utilisateur doit être autorisé à assumer le ou les rôles qui lui ont été attribués.
+
+Autorisation de permissions : les permissions ou privilèges ne sont accordés qu’aux utilisateurs autorisés par l'attribution de leurs rôles.
+
+
+class EdgesContext
+add_role() : crée la flèche RoleBinding → Role
+add_subjects() : crée les flèches Sujet → RoleBinding
+add_rules_resource_names() : gère les cas particuliers de resourceNames
+
+
+
+RBAC, Role, ClusterRole, RoleBinding, ServiceAccount
+Verbes: get, list, watch, create, update, delete
+Ressources: Pod, Secret, ConfigMap, Service, Deployment
+Namespace, Label, KubeDiagrams, DOT, Diagramme
+Flèches sémantiques, visualisation des permissions
+
+
+###### add_rules_resource_names() — cas très spécifique
+Elle gère uniquement quand on nomme une ressource précise :
+
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  resourceNames: ["mon-pod-precis"]  # un pod précis
+  verbs: ["get"]
+
+
+crée une flèche vers le pod qui s'appelle exactement "mon-pod-precis"
+- ce pod doit exister dans le fichier YAML
+- les verbes ne sont pas affichés sur la flèche
+
+
+###### add_rules() — cas général
+
+Elle gère quand on donne accès à tous les objets d'un type :
+rules:
+- apiGroups: [""]
+  resources: ["pods"]  # tous les pods
+  verbs: ["get", "list"]
+
+- crée une flèche vers tous les pods qui existent dans le fichier YAML
+- les verbes sont affichés sur la flèche (get, list)
+
+
+### Exemple à tester quand on aura codé add_rules
+
+**Le pod précis qui existe dans le fichier**
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mon-pod-precis        # ← le pod nommé explicitement
+  namespace: default
+spec: {}
+
+---
+
+**Le ServiceAccount**
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: asma
+  namespace: default
+
+---
+
+**Le Role qui donne accès UNIQUEMENT au pod "mon-pod-precis"**
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: pod-reader
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  resourceNames: ["mon-pod-precis"]  # add_rules_resource_names() gère ça (sans ça c'est tous les pods)
+  verbs: ["get"]
+
+---
+
+**Le RoleBinding**
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: asma-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: asma
+  namespace: default
+roleRef:
+  kind: Role
+  name: pod-reader
+  apiGroup: rbac.authorization.k8s.io
+
+
+
+[Role: pod-reader] ──get, list──→ [Pod: pod-1]
+                   ──get, list──→ [Pod: pod-2]
+                   ──get, list──→ [Pod: pod-3]
+
+(trop chargé visuellement ?)
+
+
+
+cas particuliers :
+
+- resources : ["*"] # tous les types de ressources
+
+- verbs : ["*"] # tous les droits
+
+- resources ["pods", "secrets", "configmaps"] # plusieurs resources dans une règle (une flèche par ressource ou une flèche pour tout ?)
+
+- apiGroups : ["", "apps"] # plusieurs apiGroups (comment combiner apiGroup et resource pour trouver le bon noeud)
+
+- resources ["pods/log"] # sous-resources avec "/"  (ignorer comme dans add_rules_resource_names() ?)
+- nonResourceURLs: ["/healthz", "/metrics"] # pas une ressource Kubernetes classique, que faire, ignorer  ?
+(URLs spéciales de l'API Kubernetes qui ne correspondent pas à des objets)
+
+- resources: ["pods"]
+resourceNames: ["mon-pod"] # resourceNames combiné avec resources (déjà géré par add_rules_resource_names(), ignorer dans add_rules() ?)
+
+OK - resources: ["pods"]   # mais pas de Pod dans le fichier YAML (afficher un warning et passer, comme le fait déjà add_edge_to(), déjà géré)
+- apiGroups: [""]   # groupe de base (déjà géré, "" devient "v1")
+
+- rules:
+- resources: ["pods"]
+  verbs: ["get"]
+- resources: ["secrets"]
+  verbs: ["*"]
+  créer une flèche par règle peut vite devenir illisible
+
+
+
+  -> danger : warning ou interdire ?
