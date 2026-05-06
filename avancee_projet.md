@@ -629,3 +629,10 @@ if '/' in resource:
 idee possible: 
 extraire uniquement la ressource principale avant le /
 
+3.- Problème d’affichage RBAC sur grands diagrammes  
+  Quand beaucoup de règles RBAC sont affichées directement sur les flèches, le diagramme devient illisible.  
+
+  Idée envisagée :  
+  passer en SVG interactif et afficher les permissions uniquement au survol de la souris (tooltip).  
+ 
+
