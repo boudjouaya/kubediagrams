@@ -1000,40 +1000,91 @@ class EdgesContext(list):
                         api_version,
                         "REFERENCE-UP"
                     )
-                    
+    def add_rules(self):
+        """
+        Add edges from Role/ClusterRole rules to matching resources.
+        """
+
+        for ridx, rule in enumerate(query_path(self.resource, "rules", [])):
+
+            if not isinstance(rule, dict):
+                continue
+
+            if rule.get("resourceNames") is not None:
+                continue
+
+            verbs = rule.get("verbs", [])
+            if not verbs:
+                continue
+
+            label = self.generate_label(verbs)
+
+            api_groups = rule.get("apiGroups", [""])
+
+            for resource_name in rule.get("resources", []):
+
+                if resource_name == "*":
+                    continue
+
+                if "/" in resource_name:
+                    continue
+
+                kind = PLURAL2KINDS.get(resource_name)
+
+                if kind is None:
+                    continue
+
+                for api_group in api_groups:
+
+                    if api_group == "":
+                        api_version = "v1"
+                    else:
+                        api_version = f"{api_group}/v1"
+
+                    edge = {
+                        "xlabel": label,
+                        "fontsize": "10",
+                        "color": "black"
+                    }
+
+                    # search ALL matching resources
+                    for rid, target_resource in resources.items():
+
+                        if target_resource.get("kind") != kind:
+                            continue
+
+                        scope = config["nodes"].get(
+                            f"{kind}/{api_version}", {}
+                        ).get("scope")
+
+                        if scope == "Namespaced":
+                            namespace = get_namespace(target_resource)
+                        else:
+                            namespace = None
+
+                        self.add_edge_to(
+                            f"rules[{ridx}]",
+                            get_name(target_resource),
+                            namespace,
+                            kind,
+                            api_version,
+                            edge
+                        )
+
     def generate_label(self, verbs):
+        """
+            Construit un label texte simple.
+            Exemple : ["get", "list"] → "g,l"
+        """
         mapping = {
-            "get": ("G", "yellow"), 
-            "list": ("L", "blue"),  
-            "watch": ("W", "brown"), 
-            "create": ("C", "green"), 
-            "update": ("U", "pink"), 
-            "delete": ("D", "red"),   
-            "patch": ("P", "gray"),   
-            "deletecollection": ("DC", "black"),
-            "*": ("★", "orange")  
+            "get": "g", "list": "l", "watch": "w",
+            "create": "c", "update": "u", "patch": "p",
+            "delete": "d", "deletecollection": "dc", "*": "*",
         }
-        
-        labels = []
-        
-        for v in verbs:
-            if v in mapping:
-                letter, color = mapping[v]
-            else:
-                letter = v[0].upper()
-                color = "purple"
-            
-            label_html = f'''<table border="0" cellborder="0" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td bgcolor="{color}" width="20" height="20" align="center" valign="middle" fixedsize="true">
-                                        <font color="white"><b>{letter}</b></font>
-                                    </td>
-                                </tr>
-                            </table>'''
-            labels.append(label_html)
-            
-        return f'<{" ".join(labels)}>'
-                    
+        if "*" in verbs:
+            return "*"
+        return ",".join(mapping.get(v, v[0].upper()) for v in verbs)
+
 
 PLURAL2KINDS = {}
 for k, v in config["nodes"].items():
@@ -1044,7 +1095,6 @@ for k, v in config["nodes"].items():
     if plural is None:
         plural = node_kind.lower() + "s"
     PLURAL2KINDS[plural] = node_kind
-
 
 def create_node_for_role_rules_resource_names(role, nodes):
     """

@@ -8,13 +8,6 @@ if ! command -v kube-diagrams &>/dev/null; then
   echo "Error: kube-diagrams is not installed. Please install it first."
   exit 1
 fi
-
-# Check if helm is installed
-if ! command -v helm &>/dev/null; then
-  echo "Error: helm is not installed. Please install it first."
-  exit 1
-fi
-
 # Display help message
 show_help() {
   echo "Usage: helm-diagrams <helm-chart-url> [OPTIONS] [FLAGS]"
