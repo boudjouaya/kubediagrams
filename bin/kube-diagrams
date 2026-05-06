@@ -1000,91 +1000,76 @@ class EdgesContext(list):
                         api_version,
                         "REFERENCE-UP"
                     )
+                    
+    def generate_label(self, verbs):
+        mapping = {
+            "get": ("G", "#F9A825"),
+            "list": ("L", "#1E88E5"),
+            "watch": ("W", "#8D6E63"),
+            "create": ("C", "#43A047"),
+            "update": ("U", "#EC407A"),
+            "delete": ("D", "#E53935"),
+            "patch": ("P", "#78909C"),
+            "deletecollection": ("DC", "#37474F"),
+            "*": ("★", "#FB8C00")
+    }
+        
+        colored = []
+        for v in verbs:
+            if v in mapping:
+                letter, color = mapping[v]
+                colored.append(f'<font color="{color}">{letter}</font>')
+            else:
+                colored.append(v[0].upper())
+        
+        return f'<{" ".join(colored)}>'
+    
+    
+    
     def add_rules(self):
-        """
-        Add edges from Role/ClusterRole rules to matching resources.
-        """
-
-        for ridx, rule in enumerate(query_path(self.resource, "rules", [])):
-
+        if self.resource.get('kind') not in ('Role', 'ClusterRole'):
+            return
+        
+        for ridx, rule in enumerate(self.resource.get('rules', [])):
             if not isinstance(rule, dict):
                 continue
 
-            if rule.get("resourceNames") is not None:
-                continue
+            api_groups = rule.get('apiGroups', [''])
+            api_group = api_groups[0] if api_groups else ''
+            api_version = 'v1' if api_group == '' else f'{api_group}/v1'
 
-            verbs = rule.get("verbs", [])
+            verbs = rule.get('verbs', [])
             if not verbs:
                 continue
 
             label = self.generate_label(verbs)
 
-            api_groups = rule.get("apiGroups", [""])
+            for resource in rule.get('resources', []):
 
-            for resource_name in rule.get("resources", []):
-
-                if resource_name == "*":
+                if resource == '*':
                     continue
 
-                if "/" in resource_name:
+                if '/' in resource:
                     continue
 
-                kind = PLURAL2KINDS.get(resource_name)
+                kind = PLURAL2KINDS.get(resource, resource.capitalize())
 
-                if kind is None:
-                    continue
+                node_config = config['nodes'].get(f'{kind}/{api_version}', {})
+                scope = node_config.get('scope')
+                namespace = self.namespace if scope == 'Namespaced' else None
 
-                for api_group in api_groups:
-
-                    if api_group == "":
-                        api_version = "v1"
-                    else:
-                        api_version = f"{api_group}/v1"
-
-                    edge = {
-                        "xlabel": label,
-                        "fontsize": "10",
-                        "color": "black"
-                    }
-
-                    # search ALL matching resources
-                    for rid, target_resource in resources.items():
-
-                        if target_resource.get("kind") != kind:
-                            continue
-
-                        scope = config["nodes"].get(
-                            f"{kind}/{api_version}", {}
-                        ).get("scope")
-
-                        if scope == "Namespaced":
-                            namespace = get_namespace(target_resource)
-                        else:
-                            namespace = None
-
-                        self.add_edge_to(
-                            f"rules[{ridx}]",
-                            get_name(target_resource),
-                            namespace,
-                            kind,
-                            api_version,
-                            edge
-                        )
-
-    def generate_label(self, verbs):
-        """
-            Construit un label texte simple.
-            Exemple : ["get", "list"] → "g,l"
-        """
-        mapping = {
-            "get": "g", "list": "l", "watch": "w",
-            "create": "c", "update": "u", "patch": "p",
-            "delete": "d", "deletecollection": "dc", "*": "*",
-        }
-        if "*" in verbs:
-            return "*"
-        return ",".join(mapping.get(v, v[0].upper()) for v in verbs)
-
+                for rid, res in resources.items():
+                    # skip si c'est pas le bon type
+                    if res.get('kind') != kind:
+                        continue
+                    # skip si c'est pas le bon namespace
+                    if namespace is not None and get_namespace(res) != namespace:
+                        continue
+                    # ressource du bon type -> créer la flèche
+                    self.add_edge(
+                        f'rules[{ridx}]',
+                        [rid, {"xlabel": label, "color": "black", "fontsize": "10"}]
+                    )
 
 PLURAL2KINDS = {}
 for k, v in config["nodes"].items():
@@ -1095,6 +1080,7 @@ for k, v in config["nodes"].items():
     if plural is None:
         plural = node_kind.lower() + "s"
     PLURAL2KINDS[plural] = node_kind
+
 
 def create_node_for_role_rules_resource_names(role, nodes):
     """
