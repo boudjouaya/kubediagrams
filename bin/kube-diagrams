@@ -1000,6 +1000,40 @@ class EdgesContext(list):
                         api_version,
                         "REFERENCE-UP"
                     )
+                    
+    def generate_label(self, verbs):
+        mapping = {
+            "get": ("G", "yellow"), 
+            "list": ("L", "blue"),  
+            "watch": ("W", "brown"), 
+            "create": ("C", "green"), 
+            "update": ("U", "pink"), 
+            "delete": ("D", "red"),   
+            "patch": ("P", "gray"),   
+            "deletecollection": ("DC", "black"),
+            "*": ("★", "orange")  
+        }
+        
+        labels = []
+        
+        for v in verbs:
+            if v in mapping:
+                letter, color = mapping[v]
+            else:
+                letter = v[0].upper()
+                color = "purple"
+            
+            label_html = f'''<table border="0" cellborder="0" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td bgcolor="{color}" width="20" height="20" align="center" valign="middle" fixedsize="true">
+                                        <font color="white"><b>{letter}</b></font>
+                                    </td>
+                                </tr>
+                            </table>'''
+            labels.append(label_html)
+            
+        return f'<{" ".join(labels)}>'
+                    
 
 PLURAL2KINDS = {}
 for k, v in config["nodes"].items():
@@ -1010,6 +1044,7 @@ for k, v in config["nodes"].items():
     if plural is None:
         plural = node_kind.lower() + "s"
     PLURAL2KINDS[plural] = node_kind
+
 
 def create_node_for_role_rules_resource_names(role, nodes):
     """

@@ -564,3 +564,34 @@ add_rules() doit :
 - Chercher si cette ressource existe dans le fichier YAML
 - Si oui : créer la flèche avec les verbes dessus
 - Si non : on passe
+
+---
+
+Représentation graphique : flèches avec label de couleurs + première lettre du verbe de permission 
+
+- faire une fonction pour générer le label à partir du verbe 
+
+on s'aide du code qui génère les labels pour rbac-view (frontend/src/components/Actions.vue)
+
+Dans Graphviz (le moteur de KubeDiagrams), on ne peut pas faire de vrais badges HTML/CSS. Mais on peut utiliser du HTML inline.
+
+🟢 Vert = lecture
+🔵 Bleu = liste
+🟣 Violet = surveillance
+🟠 Orange = modification/création
+🔴 Rouge = suppression
+⚫ Noir = tous droits
+
+ou 
+
+une couleur différente par label - repris de rbac-view (utilisé pour l'instant, à valider): 
+
+🟡 GET
+🔵 LIST
+🟤 WATCH
+🟢 CREATE
+🩷 UPDATE 
+🔴 DELETE
+🩶 PATCH
+⚫ DELETECOLLECTION
+🟠  *       
