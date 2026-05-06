@@ -1074,7 +1074,7 @@ class EdgesContext(list):
                     # ressource du bon type -> créer la flèche
                     self.add_edge(
                         f'rules[{ridx}]',
-                        [rid, {"xlabel": label, "color": "black", "fontsize": "10"}]
+                        [rid, {"label": label, "color": "black", "fontsize": "10"}]
                     )
 
 PLURAL2KINDS = {}
