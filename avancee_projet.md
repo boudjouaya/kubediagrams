@@ -1,4 +1,4 @@
-# SEMAINE 1
+# Suivi
 
 ## 1. État de l'art des outils RBAC Kubernetes
 
@@ -41,7 +41,7 @@ dot -Tpng rbac.dot > rbac.png
 open rbac.png
 ```
 
----
+
 
 ### 1.2 RBAC View
 
@@ -70,7 +70,7 @@ kubectl krew install rbac-view
 # → Erreur : non compatible avec Mac Apple Silicon
 ```
 
----
+
 
 ### 1.3 Krane
 
@@ -104,15 +104,15 @@ krane report -k minikube
 # → Non fonctionnel (problèmes de certificats sur Mac Apple Silicon)
 ```
 
----
+
 
 ### 1.4 Récapitulatif des trois outils
 
 | Outil | Langage | Visualisation | Analyse sécu | Facilité |
 |-------|---------|---------------|--------------|----------|
-| RBAC Tool | Go | Graphe basique | ✅ | Moyenne |
-| RBAC View | Go | Interface web | ❌ | Difficile (abandonné) |
-| Krane | Ruby | Dashboard complet | ✅✅ | Très complexe |
+| RBAC Tool | Go | Graphe basique | oui | Moyenne |
+| RBAC View | Go | Interface web | non | Difficile (abandonné) |
+| Krane | Ruby | Dashboard complet | oui | Très complexe |
 
 **Conclusion** : Aucun de ces outils n'est léger, écrit en Python et intégré à un outil d'architecture Kubernetes existant.
 
@@ -161,21 +161,21 @@ add_rules_resource_names()
 
 2. **Ressources cibles absentes** : `add_rules_resource_names()` gère uniquement les ressources nommées explicitement (`resourceNames`), mais pas le cas général où un Role donne accès à tous les pods ou tous les secrets.
 
-**Ce qui manque — le cas général non géré**
+**Ce qui manque : le cas général non géré**
 ```yaml
 rules:
 - resources: ["pods", "secrets"]  # cas pas géré
   verbs: ["get", "list"]
 ```
 
-### 2.3 Ce que le projet doit apporter
+### 2.3 
 
 Créer une fonction `add_rules()` dans `kube-diagrams` qui :
 - Lit toutes les `rules` d'un Role ou ClusterRole
 - Crée des flèches vers les ressources cibles (Pods, Secrets, ConfigMaps...)
 - Affiche les verbes sur les flèches (get, list, create...)
 
-**Rendu attendu**
+**Rendu**
 ```
 [ServiceAccount] ──→ [RoleBinding] ──→ [Role] ──get, list──→ [pods]
                                               ──*──────────→ [secrets]
@@ -291,11 +291,7 @@ roleRef:
 
 ## 4. Notes complémentaires
 
-### Pourquoi les PVC apparaissent sans être déclarés ?
-
-(exemple dans issues/issue#2) pq 6 objets alors que 4 créés ? 
-Dans un StatefulSet, le champ `volumeClaimTemplates` dit à Kubernetes de créer automatiquement un PVC pour chaque replica. KubeDiagrams lit ce champ et crée automatiquement le nœud PVC dans le diagramme via `add_volume_claim_templates()`.  bonne inspiration pour `add_rules()` : lire les `rules` et créer automatiquement les nœuds ressources cibles.
-
+(exemple dans issues/issue#2)
 ### Le fichier semiotics.yaml
 
 fichier de démonstration de KubeDiagrams qui montre un exemple de chaque type de ressource Kubernetes supportée. RBAC  déjà présent mais les flèches entre les Roles et les ressources cibles sont absentes : à ajouter.
@@ -319,14 +315,6 @@ fichier de démonstration de KubeDiagrams qui montre un exemple de chaque type d
 
 
 add_rules_resource_name() : crée des flèches entre un Role et des ressources nommées spécifiquement dans les rules (gère les resourceNames)
-
-
-add_rules() doit :
-- lire les rules du Role
-- Pour chaque ressource dans les rules (pods, secrets...)
-- Chercher si cette ressource existe dans le fichier YAML
-- Si oui → créer la flèche avec les verbes dessus
-- Si non → warning et on passe
 
 
 
@@ -400,6 +388,8 @@ def render_rbac_graph(perms, show_rules=True):
         
         # Arête Binding → Role
         g.edge(binding_node, role_node, label="refers to")
+
+        ## déjà géré au dessus 
         
         # Pour chaque Sujet
         for subject in binding["subjects"]:
@@ -438,8 +428,6 @@ Verbes: get, list, watch, create, update, delete
 Ressources: Pod, Secret, ConfigMap, Service, Deployment
 Namespace, Label, KubeDiagrams, DOT, Diagramme
 Flèches sémantiques, visualisation des permissions
-
-
 ###### add_rules_resource_names() — cas très spécifique
 Elle gère uniquement quand on nomme une ressource précise :
 
@@ -470,25 +458,29 @@ rules:
 ### Exemple à tester quand on aura codé add_rules
 
 **Le pod précis qui existe dans le fichier**
+```yaml
 apiVersion: v1
 kind: Pod
 metadata:
   name: mon-pod-precis        # ← le pod nommé explicitement
   namespace: default
-spec: {}
+```
 
 ---
 
 **Le ServiceAccount**
+```yaml
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: asma
   namespace: default
+```
 
 ---
 
 **Le Role qui donne accès UNIQUEMENT au pod "mon-pod-precis"**
+```yaml
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -499,10 +491,11 @@ rules:
   resources: ["pods"]
   resourceNames: ["mon-pod-precis"]  # add_rules_resource_names() gère ça (sans ça c'est tous les pods)
   verbs: ["get"]
-
+```
 ---
 
 **Le RoleBinding**
+```yaml
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
@@ -516,8 +509,7 @@ roleRef:
   kind: Role
   name: pod-reader
   apiGroup: rbac.authorization.k8s.io
-
-
+```
 
 [Role: pod-reader] ──get, list──→ [Pod: pod-1]
                    ──get, list──→ [Pod: pod-2]
@@ -529,31 +521,46 @@ roleRef:
 
 cas particuliers :
 
-- resources : ["*"] # tous les types de ressources
+OK - resources : ["*"] # tous les types de ressources -> ignoré 
 
-- verbs : ["*"] # tous les droits
+OK - verbs : ["*"] # tous les droits -> on garde 
 
-- resources ["pods", "secrets", "configmaps"] # plusieurs resources dans une règle (une flèche par ressource ou une flèche pour tout ?)
+OK - resources ["pods", "secrets", "configmaps"] # plusieurs resources dans une règle -> une flèche par ressource
+    - apiGroups : ["", "apps"] # plusieurs apiGroups (comment combiner apiGroup et resource pour trouver le bon noeud)
+-> (resource + apiGroups fonctionnent ensemble )
 
-- apiGroups : ["", "apps"] # plusieurs apiGroups (comment combiner apiGroup et resource pour trouver le bon noeud)
+OK - resources ["pods/log"] # sous-resources avec "/" -> ignorer comme dans add_rules_resource_names() 
 
-- resources ["pods/log"] # sous-resources avec "/"  (ignorer comme dans add_rules_resource_names() ?)
 - nonResourceURLs: ["/healthz", "/metrics"] # pas une ressource Kubernetes classique, que faire, ignorer  ?
-(URLs spéciales de l'API Kubernetes qui ne correspondent pas à des objets)
+(URLs spéciales de l'API Kubernetes qui ne correspondent pas à des objets).  -> à voir plus tard 
 
-- resources: ["pods"]
-resourceNames: ["mon-pod"] # resourceNames combiné avec resources (déjà géré par add_rules_resource_names(), ignorer dans add_rules() ?)
+OK - resources: ["pods"]
+resourceNames: ["mon-pod"] # resourceNames combiné avec resources -> déjà géré par add_rules_resource_names(), ignorer dans add_rules() 
 
-OK - resources: ["pods"]   # mais pas de Pod dans le fichier YAML (afficher un warning et passer, comme le fait déjà add_edge_to(), déjà géré)
-- apiGroups: [""]   # groupe de base (déjà géré, "" devient "v1")
+OK - resources: ["pods"]   # mais pas de Pod dans le fichier YAML -> déjà géré par add_edge_to()
 
-- rules:
-- resources: ["pods"]
-  verbs: ["get"]
-- resources: ["secrets"]
-  verbs: ["*"]
-  créer une flèche par règle peut vite devenir illisible
+OK - apiGroups: [""]   # groupe de base  -> déjà géré, "" devient "v1"
+
+OK  - rules:
+    - resources: ["pods"]
+      verbs: ["get"]
+    - resources: ["secrets"]
+      verbs: ["*"]
+      créer une flèche par règle -> illisible -> création de labels avec initial (+ compacte et lisible)
+
+
+Résumé à ajouter :
+- add_rules pour créer des flèches entre un Role et les ressources ciblées par ses rules.
+- L'affichage des verbes comme étiquettes sur ces flèches.
+- Une option (en ligne de commande) pour activer/désactiver l'affichage des verbes, par exemple --show-verbs.
 
 
 
-  -> danger : warning ou interdire ?
+python3 bin/kube-diagrams images/semiotics.yaml -o test_output.png
+
+add_rules() doit :
+- lire les rules du Role
+- Pour chaque ressource dans les rules (pods, secrets...)
+- Chercher si cette ressource existe dans le fichier YAML
+- Si oui : créer la flèche avec les verbes dessus
+- Si non : on passe
