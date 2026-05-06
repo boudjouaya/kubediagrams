@@ -556,7 +556,7 @@ Résumé à ajouter :
 
 
 
-python3 bin/kube-diagrams images/semiotics.yaml -o test_output.png
+python3 bin/kube-diagrams test.yaml -o test_output.png
 
 add_rules() doit :
 - lire les rules du Role
