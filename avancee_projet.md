@@ -604,3 +604,28 @@ add_rules ok mais sur un gros diagramme devient vite illisible avec beaucoup de 
 
 
 - trouver une solution pour la lisibilité des permissions
+
+
+### Cas particuliers / questions à discuter
+1. 
+OK - `resources: ["*"]`  
+→ actuellement ignoré avec :
+
+```python
+if resource == '*':
+    continue
+
+idee possible :
+- creer une fleche vers toutes les ressources trouvees dans le yaml 
+
+
+2. OK - resources: ["pods/log"]
+
+→ actuellement ignoré avec :
+
+if '/' in resource:
+    continue
+
+idee possible: 
+extraire uniquement la ressource principale avant le /
+
