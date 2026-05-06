@@ -597,3 +597,10 @@ une couleur différente par label - repris de rbac-view (utilisé pour l'instant
 🩶 PATCH
 ⚫ DELETECOLLECTION
 🟠  *       
+
+
+-> modification de generate_label car graphiviz supporte pas le html donc affichage des lettres majusucules colorées pour les verbes 
+add_rules ok mais sur un gros diagramme devient vite illisible avec beaucoup de flèches
+
+
+- trouver une solution pour la lisibilité des permissions
