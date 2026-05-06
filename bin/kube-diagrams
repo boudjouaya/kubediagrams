@@ -1033,6 +1033,12 @@ class EdgesContext(list):
         for ridx, rule in enumerate(self.resource.get('rules', [])):
             if not isinstance(rule, dict):
                 continue
+             # Géré par add_rules_resource_names()
+            if rule.get('resourceNames'):
+                continue
+             # Pas des ressources Kubernetes classiques
+            if rule.get('nonResourceURLs'):
+               continue
 
             api_groups = rule.get('apiGroups', [''])
             api_group = api_groups[0] if api_groups else ''
