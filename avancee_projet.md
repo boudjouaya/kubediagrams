@@ -555,8 +555,10 @@ Résumé à ajouter :
 - Une option (en ligne de commande) pour activer/désactiver l'affichage des verbes, par exemple --show-verbs.
 
 
-
+### Commande de test 
+```
 python3 bin/kube-diagrams test.yaml -o test_output.png
+```
 
 add_rules() doit :
 - lire les rules du Role
