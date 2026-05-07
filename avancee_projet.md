@@ -649,3 +649,14 @@ extraire uniquement la ressource principale avant le /
 
 
 -> taille des rect et initiales à ajuster 
+
+
+- tests :
+  - % python3 bin/kube-diagrams test.yaml -o test_output.png
+  - % python3 bin/kube-diagrams examples/kube-prometheus-stack/kube-prometheus-stack-corrected.yaml -o test_output2.png
+  - % python3 bin/kube-diagrams examples/argo/argo-cd-manifests-install-corrected.yaml -o test_output3.png
+  - % python3 bin/kube-diagrams examples/helm-charts/cert-manager.yaml -o test_output4.png
+  
+
+
+- ajouter un titre "permissions" au noeud
