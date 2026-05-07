@@ -637,3 +637,15 @@ extraire uniquement la ressource principale avant le /
   Idée envisagée :  
   passer en SVG interactif et afficher les permissions uniquement au survol de la souris (tooltip).  
 ![Permission](./exemple_affichage_permission.png)
+
+
+- changement pour add_rules : 
+  visualisation des permissions RBAC via un nœud intermédiaire
+
+  Pour chaque règle d'un Role ou ClusterRole, un nœud rect intermédiaire est inséré entre le Role et la ressource cible pour afficher les verbes autorisés sous forme de lettres colorées (G, L, C, U, D, P, DC, ★).
+
+  Par exemple pour test.yaml on a :
+    [Role] → [G L] → [Pod]
+
+
+-> taille des rect et initiales à ajuster 
