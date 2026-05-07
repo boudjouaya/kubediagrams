@@ -615,6 +615,7 @@ OK - `resources: ["*"]`
 ```python
 if resource == '*':
     continue
+```
 
 idee possible :
 - creer une fleche vers toutes les ressources trouvees dans le yaml 
@@ -623,10 +624,10 @@ idee possible :
 2. OK - resources: ["pods/log"]
 
 → actuellement ignoré avec :
-
+```python
 if '/' in resource:
     continue
-
+```
 idee possible: 
 extraire uniquement la ressource principale avant le /
 
@@ -635,5 +636,4 @@ extraire uniquement la ressource principale avant le /
 
   Idée envisagée :  
   passer en SVG interactif et afficher les permissions uniquement au survol de la souris (tooltip).  
- ![permission](exemple_affichage_permission.png)
-
+![Permission](./exemple_affichage_permission.png)
