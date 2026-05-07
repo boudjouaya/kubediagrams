@@ -607,6 +607,7 @@ add_rules ok mais sur un gros diagramme devient vite illisible avec beaucoup de 
 
 
 ### Cas particuliers / questions à discuter
+
 1. 
 OK - `resources: ["*"]`  
 → actuellement ignoré avec :
@@ -634,5 +635,5 @@ extraire uniquement la ressource principale avant le /
 
   Idée envisagée :  
   passer en SVG interactif et afficher les permissions uniquement au survol de la souris (tooltip).  
- 
+ ![permission](exemple_affichage_permission.png)
 
