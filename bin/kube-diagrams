@@ -1022,7 +1022,20 @@ class EdgesContext(list):
             else:
                 colored.append(v[0].upper())
         
-        return f'<{" ".join(colored)}>'
+        verbs_line = " ".join(colored)
+
+        return (
+            '<<table border="0" cellborder="0" cellspacing="2" cellpadding="0.01">'
+            '<tr>'  
+            f'<td align="center">{verbs_line}</td>'   
+            '</tr>'
+            '<tr>'
+           '<td align="center">'
+            '<font point-size="10"><b>PERMISSIONS</b></font>'
+            '</td>'
+            '</tr>'
+            '</table>>'
+        )
     
     
     
@@ -1089,7 +1102,7 @@ class EdgesContext(list):
 
                         width="1.5",
 
-                        height="0.4",
+                        height="0.55",
 
                         margin="0.02,0.01",
                         
