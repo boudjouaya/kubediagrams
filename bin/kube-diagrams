@@ -1029,16 +1029,16 @@ class EdgesContext(list):
     def add_rules(self):
         if self.resource.get('kind') not in ('Role', 'ClusterRole'):
             return
-        
+
         for ridx, rule in enumerate(self.resource.get('rules', [])):
             if not isinstance(rule, dict):
                 continue
-             # Géré par add_rules_resource_names()
+
             if rule.get('resourceNames'):
                 continue
-             # Pas des ressources Kubernetes classiques
+
             if rule.get('nonResourceURLs'):
-               continue
+                continue
 
             api_groups = rule.get('apiGroups', [''])
             api_group = api_groups[0] if api_groups else ''
@@ -1051,32 +1051,50 @@ class EdgesContext(list):
             label = self.generate_label(verbs)
 
             for resource in rule.get('resources', []):
-
                 if resource == '*':
                     continue
-
                 if '/' in resource:
                     continue
 
                 kind = PLURAL2KINDS.get(resource, resource.capitalize())
-
                 node_config = config['nodes'].get(f'{kind}/{api_version}', {})
                 scope = node_config.get('scope')
                 namespace = self.namespace if scope == 'Namespaced' else None
 
-                for rid, res in resources.items():
-                    # skip si c'est pas le bon type
-                    if res.get('kind') != kind:
-                        continue
-                    # skip si c'est pas le bon namespace
-                    if namespace is not None and get_namespace(res) != namespace:
-                        continue
-                    # ressource du bon type -> créer la flèche
-                    self.add_edge(
-                        f'rules[{ridx}]',
-                        [rid, {"label": label, "color": "black", "fontsize": "10"}]
+                perm_id = f"perm_{self.rid}_{ridx}_{kind}"
+                if perm_id not in diagram_nodes:
+                    dot = diagrams.getdiagram().dot
+                    dot.node(
+                        perm_id,
+                        label=label,             
+                        shape="rect",           
+                        style="rounded,filled", 
+                        fillcolor="white",     
+                        fontsize="10",
+                        margin="0.15"
                     )
 
+                    node = object.__new__(diagrams.Node)
+                    node._id = perm_id
+                    node._diagram = diagrams.getdiagram()
+                    node._cluster = diagrams.getcluster()
+                    diagram_nodes[perm_id] = node
+
+                self.add_edge(
+                    f'rules[{ridx}]',
+                    [perm_id, "REFERENCE"]
+                )
+
+                for rid, res in resources.items():
+                    if res.get('kind') != kind:
+                        continue
+                    if namespace is not None and get_namespace(res) != namespace:
+                        continue
+                    self.add_edge(
+                        f'rules[{ridx}]',
+                        [perm_id, rid, "REFERENCE"]
+                    )
+                
 PLURAL2KINDS = {}
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
