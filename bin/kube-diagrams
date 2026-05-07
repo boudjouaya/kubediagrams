@@ -1079,7 +1079,7 @@ class EdgesContext(list):
 
                         style="filled,rounded",
 
-                        fillcolor="#FFF3CD",
+                        fillcolor="#EEEEEE",
 
                         color="#D6D6D6",
 
@@ -1087,11 +1087,15 @@ class EdgesContext(list):
 
                         fontname="Helvetica Bold",
 
-                        width="1",
+                        width="1.5",
 
                         height="0.4",
 
-                        margin="0.02,0.01"
+                        margin="0.02,0.01",
+                        
+                        align="center",
+                        
+                        labelloc="c"   
                     )
 
                     node = object.__new__(diagrams.Node)
