@@ -1027,7 +1027,7 @@ class EdgesContext(list):
         return (
             '<<table border="0" cellborder="0" cellspacing="2" cellpadding="0.01">'
             '<tr>'  
-            f'<td align="center" bgcolor="#FFFFFF">{verbs_line}</td>'   
+            f'<td align="center" bgcolor="#FFFFFF" style="rounded">{verbs_line}</td>'   
             '</tr>'
             '<tr>'
            '<td align="center">'
