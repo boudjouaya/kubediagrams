@@ -1018,7 +1018,7 @@ class EdgesContext(list):
         for v in verbs:
             if v in mapping:
                 letter, color = mapping[v]
-                colored.append(f'<font color="{color}">{letter}</font>')
+                colored.append(f'<font color="{color}"><b>{letter}</b></font>')
             else:
                 colored.append(v[0].upper())
         
@@ -1027,11 +1027,11 @@ class EdgesContext(list):
         return (
             '<<table border="0" cellborder="0" cellspacing="2" cellpadding="0.01">'
             '<tr>'  
-            f'<td align="center">{verbs_line}</td>'   
+            f'<td align="center" bgcolor="#FFFFFF">{verbs_line}</td>'   
             '</tr>'
             '<tr>'
            '<td align="center">'
-            '<font point-size="10"><b>PERMISSIONS</b></font>'
+            '<font point-size="13" color="#FFFFFF">permissions</font>'
             '</td>'
             '</tr>'
             '</table>>'
@@ -1092,13 +1092,13 @@ class EdgesContext(list):
 
                         style="filled,rounded",
 
-                        fillcolor="#EEEEEE",
+                        fillcolor="#3d74e7",
 
-                        color="#D6D6D6",
+                        color="#3d74e7",
 
                         fontsize="11",
 
-                        fontname="Helvetica Bold",
+                        fontname="Helvetica",
 
                         width="1.5",
 

@@ -660,3 +660,10 @@ extraire uniquement la ressource principale avant le /
 
 
 - ajouter un titre "permissions" au noeud
+
+
+
+
+- Ajustement des couleurs du noeud permissions pour une meilleure cohérence visuelle (code couleur récupéré des icones)
+- Ajouter une distance min entre les flèches pour une meilleure lisibilité ?
+- Régler le placement du noeud permission à l'intérieur du namesspace ?
