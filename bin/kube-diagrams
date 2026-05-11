@@ -1238,6 +1238,12 @@ parser.add_argument("-v", "--verbose",
 parser.add_argument("--without-namespace",
     help="disable namespace cluster generation",
     action="store_true", default=False)
+parser.add_argument(
+    "--show-rbac-legend",
+    help="display RBAC permissions legend",
+    action="store_true",
+    default=False
+)
 args = parser.parse_args()
 
 # Process arguments.
@@ -1561,6 +1567,39 @@ def create_custom_clusters_nodes(container_id, container_def):
     if container_id == generate_diagram_in_cluster:
         create_nodes(resource_cluster)
 
+def create_rbac_legend():
+    """
+    Ajoute la légende RBAC comme label du graphe,
+    positionné en bas à gauche.
+    """
+
+    legend_label = (
+        '<<table border="1" cellborder="0" cellspacing="0" cellpadding="4">'
+        '<tr><td colspan="2"><b>Permissions RBAC</b></td></tr>'
+
+        '<tr><td><font color="#F9A825"><b>G</b></font></td><td>GET</td></tr>'
+        '<tr><td><font color="#1E88E5"><b>L</b></font></td><td>LIST</td></tr>'
+        '<tr><td><font color="#8D6D63"><b>W</b></font></td><td>WATCH</td></tr>'
+        '<tr><td><font color="#43A047"><b>C</b></font></td><td>CREATE</td></tr>'
+        '<tr><td><font color="#EC407A"><b>U</b></font></td><td>UPDATE</td></tr>'
+        '<tr><td><font color="#E53935"><b>D</b></font></td><td>DELETE</td></tr>'
+        '<tr><td><font color="#78909C"><b>P</b></font></td><td>PATCH</td></tr>'
+        '<tr><td><font color="#37474F"><b>DC</b></font></td><td>DELETECOLLECTION</td></tr>'
+        '<tr><td><font color="#FB8C00"><b>★</b></font></td><td>ALL (*)</td></tr>'
+
+        '</table>>'
+    )
+
+    dot = diagrams.getdiagram().dot
+
+    dot.graph_attr.update({
+        "label": legend_label,
+        "labelloc": "b",
+        "labeljust": "l",
+        "margin": "2",
+     
+    })        
+
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
 with Diagram("", filename=args.output, show=False, direction="TB", outformat=args.format):
@@ -1570,7 +1609,16 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
 
     # Generate diagram edges
     process_edges()
+    
+    # Check if RBAC resources are present to display the legend if requested
+    has_rbac = any(
+        r.get("kind") in ("Role", "ClusterRole")
+        for r in resources.values()
+    )
 
+    if args.show_rbac_legend and has_rbac:
+        create_rbac_legend()
+        
     # Create custom edges
     for edge_idx, custom_edge in enumerate(query_path(config, "diagram.edges", [])):
         custom_edge_from = custom_edge.get("from")

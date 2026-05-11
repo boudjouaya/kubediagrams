@@ -667,7 +667,12 @@ extraire uniquement la ressource principale avant le /
 - Ajustement des couleurs du noeud permissions pour une meilleure cohérence visuelle (code couleur récupéré des icones)
 
 
+- Ajout d’une petite légende pour expliquer les lettres utilisées pour les permissions RBAC (G, L, W, C...).
+La légende est créée avec un tableau HTML Graphviz (label) directement attaché au graphe principal.
+Option ajoutée :
+`--show-rbac-legend`
+
+
+
 - Ajouter une distance min entre les flèches pour une meilleure lisibilité ?
 - Régler le placement du noeud permission à l'intérieur du namesspace ?
-- Ajouter une légende 
-- Ajouter une option (en ligne de commande) pour activer/désactiver l'affichage des verbes, par exemple --show-verbs.
