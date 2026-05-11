@@ -665,5 +665,9 @@ extraire uniquement la ressource principale avant le /
 
 
 - Ajustement des couleurs du noeud permissions pour une meilleure cohérence visuelle (code couleur récupéré des icones)
+
+
 - Ajouter une distance min entre les flèches pour une meilleure lisibilité ?
 - Régler le placement du noeud permission à l'intérieur du namesspace ?
+- Ajouter une légende 
+- Ajouter une option (en ligne de commande) pour activer/désactiver l'affichage des verbes, par exemple --show-verbs.
