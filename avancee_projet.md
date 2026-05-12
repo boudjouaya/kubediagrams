@@ -659,7 +659,7 @@ extraire uniquement la ressource principale avant le /
   
 
 
-- ajouter un titre "permissions" au noeud
+- ajouter un titre "permissions" au noeud 
 
 
 
@@ -672,7 +672,19 @@ La légende est créée avec un tableau HTML Graphviz (label) directement attach
 Option ajoutée :
 `--show-rbac-legend`
 
+- tests :
+  - % python3 bin/kube-diagrams test.yaml -o test_output.png --show-rbac-legend
+  - % python3 bin/kube-diagrams examples/kube-prometheus-stack/kube-prometheus-stack-corrected.yaml -o test_output2.png --show-rbac-legend
+  - % python3 bin/kube-diagrams examples/argo/argo-cd-manifests-install-corrected.yaml -o test_output3.png --show-rbac-legend
+  - % python3 bin/kube-diagrams examples/helm-charts/cert-manager.yaml -o test_output4.png --show-rbac-legend
 
 
 - Ajouter une distance min entre les flèches pour une meilleure lisibilité ?
 - Régler le placement du noeud permission à l'intérieur du namesspace ?
+
+
+12/05 : 
+- Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
+- permissions qui vont vers aucune ressource (et parfois aucun rôle) 
+- icônes vides ? 
+- noeud Pods -> pods spécifiques 

@@ -1137,7 +1137,7 @@ class EdgesContext(list):
 
                     if namespace is not None and get_namespace(res) != namespace:
                         continue
-
+                    
                     self.add_edge(
                         f'rules[{ridx}]',
                         [perm_id, rid, {
@@ -1569,23 +1569,22 @@ def create_custom_clusters_nodes(container_id, container_def):
 
 def create_rbac_legend():
     """
-    Ajoute la légende RBAC comme label du graphe,
-    positionné en bas à gauche.
+    Add the legend RBAC as a graph label, positioned in the bottom left corner.
     """
 
     legend_label = (
         '<<table border="1" cellborder="0" cellspacing="0" cellpadding="4">'
-        '<tr><td colspan="2"><b>Permissions RBAC</b></td></tr>'
+        '<tr><td colspan="2"><b>RBAC permissions</b></td></tr>'
 
-        '<tr><td><font color="#F9A825"><b>G</b></font></td><td>GET</td></tr>'
-        '<tr><td><font color="#1E88E5"><b>L</b></font></td><td>LIST</td></tr>'
-        '<tr><td><font color="#8D6D63"><b>W</b></font></td><td>WATCH</td></tr>'
-        '<tr><td><font color="#43A047"><b>C</b></font></td><td>CREATE</td></tr>'
-        '<tr><td><font color="#EC407A"><b>U</b></font></td><td>UPDATE</td></tr>'
-        '<tr><td><font color="#E53935"><b>D</b></font></td><td>DELETE</td></tr>'
-        '<tr><td><font color="#78909C"><b>P</b></font></td><td>PATCH</td></tr>'
-        '<tr><td><font color="#37474F"><b>DC</b></font></td><td>DELETECOLLECTION</td></tr>'
-        '<tr><td><font color="#FB8C00"><b>★</b></font></td><td>ALL (*)</td></tr>'
+        '<tr><td><font color="#F9A825"><b>G</b></font></td><td>get</td></tr>'
+        '<tr><td><font color="#1E88E5"><b>L</b></font></td><td>list</td></tr>'
+        '<tr><td><font color="#8D6D63"><b>W</b></font></td><td>watch</td></tr>'
+        '<tr><td><font color="#43A047"><b>C</b></font></td><td>create</td></tr>'
+        '<tr><td><font color="#EC407A"><b>U</b></font></td><td>update</td></tr>'
+        '<tr><td><font color="#E53935"><b>D</b></font></td><td>delete</td></tr>'
+        '<tr><td><font color="#78909C"><b>P</b></font></td><td>patch</td></tr>'
+        '<tr><td><font color="#37474F"><b>DC</b></font></td><td>deletecollection</td></tr>'
+        '<tr><td><font color="#FB8C00"><b>★</b></font></td><td>all (*)</td></tr>'
 
         '</table>>'
     )
