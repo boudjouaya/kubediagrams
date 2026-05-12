@@ -688,3 +688,9 @@ Option ajoutée :
 - permissions qui vont vers aucune ressource (et parfois aucun rôle) 
 - icônes vides ? 
 - noeud Pods -> pods spécifiques 
+
+
+
+Autres tests plus simples : 
+- python3 bin/kube-diagrams examples/custom-object-items/config/custom-object-items.yaml -o test_output5.png
+- python3 bin/kube-diagrams examples/opentelemetry-demo/downloads/opentelemetry-demo.yaml -o test_output6.png
