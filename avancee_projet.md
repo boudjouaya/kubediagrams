@@ -690,3 +690,10 @@ Option ajoutée :
 - icônes vides ? 
 - noeud Pods -> pods spécifiques 
 - mettre le noeud intermediaire "permissions" dans le cluster .
+
+
+
+Autres tests plus simples : 
+- python3 bin/kube-diagrams examples/custom-object-items/config/custom-object-items.yaml -o test_output5.png
+- python3 bin/kube-diagrams examples/opentelemetry-demo/downloads/opentelemetry-demo.yaml -o test_output6.png
+>>>>>>> 7117c4445757fd06151e35b99be47cf308f262cf
