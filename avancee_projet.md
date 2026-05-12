@@ -685,6 +685,8 @@ Option ajoutée :
 
 12/05 : 
 - Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
-- permissions qui vont vers aucune ressource (et parfois aucun rôle) 
+- permissions qui vont vers aucune ressource (et parfois aucun rôle)  -> le problème vient du fait qu’on crée le nœud permission avant de vérifier si la ressource cible existe réellement dans le YAML
+
 - icônes vides ? 
 - noeud Pods -> pods spécifiques 
+- mettre le noeud intermediaire "permissions" dans le cluster .

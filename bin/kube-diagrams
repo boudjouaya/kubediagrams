@@ -1077,59 +1077,10 @@ class EdgesContext(list):
                 scope = node_config.get('scope')
                 namespace = self.namespace if scope == 'Namespaced' else None
 
-                perm_id = f"perm_{self.rid}_{ridx}_{kind}"
 
-                if perm_id not in diagram_nodes:
+                # chercher d'abord les ressources cibles
+                target_resources = []
 
-                    dot = diagrams.getdiagram().dot
-
-                    dot.node(
-                        perm_id,
-
-                        label=label,
-
-                        shape="box",
-
-                        style="filled,rounded",
-
-                        fillcolor="#3d74e7",
-
-                        color="#3d74e7",
-
-                        fontsize="11",
-
-                        fontname="Helvetica",
-
-                        width="1.5",
-
-                        height="0.55",
-
-                        margin="0.02,0.01",
-                        
-                        align="center",
-                        
-                        labelloc="c"   
-                    )
-
-                    node = object.__new__(diagrams.Node)
-                    node._id = perm_id
-                    node._diagram = diagrams.getdiagram()
-                    node._cluster = diagrams.getcluster()
-
-                    diagram_nodes[perm_id] = node
-
-
-                # Role -> permission node
-                self.add_edge(
-                    f'rules[{ridx}]',
-                    [perm_id, {
-                        "color": "#000000",
-                        "penwidth": "1.3",
-                        "arrowsize": "0.6"
-                    }]
-                )
-
-                # permission node -> resources
                 for rid, res in resources.items():
 
                     if res.get('kind') != kind:
@@ -1137,16 +1088,76 @@ class EdgesContext(list):
 
                     if namespace is not None and get_namespace(res) != namespace:
                         continue
-                    
+
+                    target_resources.append(rid)
+
+                # créer le noeud permission seulement si une ressource existe
+                if target_resources:
+
+                    perm_id = f"perm_{self.rid}_{ridx}_{kind}"
+
+                    if perm_id not in diagram_nodes:
+
+                        dot = diagrams.getdiagram().dot
+
+                        dot.node(
+                            perm_id,
+
+                            label=label,
+
+                            shape="box",
+
+                            style="filled,rounded",
+
+                            fillcolor="#3d74e7",
+
+                            color="#3d74e7",
+
+                            fontsize="11",
+
+                            fontname="Helvetica",
+
+                            width="1.5",
+
+                            height="0.55",
+
+                            margin="0.02,0.01",
+                            
+                            align="center",
+                            
+                            labelloc="c"
+                        )
+
+                        node = object.__new__(diagrams.Node)
+                        node._id = perm_id
+                        node._diagram = diagrams.getdiagram()
+                        node._cluster = diagrams.getcluster()
+
+                        diagram_nodes[perm_id] = node
+
+                    # Role -> permission node
                     self.add_edge(
                         f'rules[{ridx}]',
-                        [perm_id, rid, {
+                        [perm_id, {
                             "color": "#000000",
-                            "penwidth": "1",
-                            "arrowsize": "0.5"
+                            "penwidth": "1.3",
+                            "arrowsize": "0.6"
                         }]
                     )
 
+                    # permission node -> resources
+                    for rid in target_resources:
+
+                        self.add_edge(
+                            f'rules[{ridx}]',
+                            [perm_id, rid, {
+                                "color": "#000000",
+                                "penwidth": "1",
+                                "arrowsize": "0.5"
+                            }]
+                        )
+
+                   
 PLURAL2KINDS = {}
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
