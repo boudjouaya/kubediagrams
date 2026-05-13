@@ -1051,7 +1051,7 @@ class EdgesContext(list):
                 continue
              # Pas des ressources Kubernetes classiques
             if rule.get('nonResourceURLs'):
-               continue
+                continue
 
             api_groups = rule.get('apiGroups', [''])
             api_group = api_groups[0] if api_groups else ''
@@ -1078,85 +1078,81 @@ class EdgesContext(list):
                 namespace = self.namespace if scope == 'Namespaced' else None
 
 
-                # chercher d'abord les ressources cibles
+                # chercher les ressources concrètes dans le YAML
                 target_resources = []
-
                 for rid, res in resources.items():
-
                     if res.get('kind') != kind:
                         continue
-
                     if namespace is not None and get_namespace(res) != namespace:
                         continue
-
                     target_resources.append(rid)
 
-                # créer le noeud permission seulement si une ressource existe
-                if target_resources:
+                # si aucune ressource concrète -> créer/réutiliser un nœud générique
+                if not target_resources:
+                    generic_id = f"generic_{kind}"
+                    generic_id = generic_id.replace(":", "_").replace("/", "_").replace("-", "_")
 
-                    perm_id = f"perm_{self.rid}_{ridx}_{kind}"
-                    perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
+                    if generic_id not in diagram_nodes:
+                        # utiliser l'icône existante du type de ressource
+                        node_classname = node_config.get("diagram_node_classname")
+                        if node_classname:
+                            idx = node_classname.rfind('.')
+                            module = importlib.import_module(node_classname[:idx])
+                            diagram_node_class = getattr(module, node_classname[idx+1:])
+                            diagram_nodes[generic_id] = diagram_node_class(f"All {kind}s")
+                        else:
+                            diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
 
-                    if perm_id not in diagram_nodes:
+                    target_resources = [generic_id]
 
-                        dot = diagrams.getdiagram().dot
+                # créer le nœud permission
+                perm_id = f"perm_{self.rid}_{ridx}_{kind}"
+                perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
 
-                        dot.node(
-                            perm_id,
+                if perm_id not in diagram_nodes:
+                    dot = diagrams.getdiagram().dot
+                    dot.node(
+                        perm_id,
+                        label=label,
+                        shape="box",
+                        style="filled,rounded",
+                        fillcolor="#3d74e7",
+                        color="#3d74e7",
+                        fontsize="11",
+                        fontname="Helvetica",
+                        width="1.5",
+                        height="0.55",
+                        margin="0.02,0.01",
+                        align="center",
+                        labelloc="c"
+                    )
+                    node = object.__new__(diagrams.Node)
+                    node._id = perm_id
+                    node._diagram = diagrams.getdiagram()
+                    node._cluster = diagrams.getcluster()
+                    diagram_nodes[perm_id] = node
 
-                            label=label,
+                # Role -> permission node
+                self.add_edge(
+                    f'rules[{ridx}]',
+                    [perm_id, {
+                        "color": "#000000",
+                        "penwidth": "1.3",
+                        "arrowsize": "0.6"
+                    }]
+                )
 
-                            shape="box",
+                # permission node -> resources
+                for rid in target_resources:
 
-                            style="filled,rounded",
-
-                            fillcolor="#3d74e7",
-
-                            color="#3d74e7",
-
-                            fontsize="11",
-
-                            fontname="Helvetica",
-
-                            width="1.5",
-
-                            height="0.55",
-
-                            margin="0.02,0.01",
-                            
-                            align="center",
-                            
-                            labelloc="c"
-                        )
-
-                        node = object.__new__(diagrams.Node)
-                        node._id = perm_id
-                        node._diagram = diagrams.getdiagram()
-                        node._cluster = diagrams.getcluster()
-
-                        diagram_nodes[perm_id] = node
-
-                    # Role -> permission node
                     self.add_edge(
                         f'rules[{ridx}]',
-                        [perm_id, {
+                        [perm_id, rid, {
                             "color": "#000000",
-                            "penwidth": "1.3",
-                            "arrowsize": "0.6"
+                            "penwidth": "1",
+                            "arrowsize": "0.5"
                         }]
                     )
-
-                    # permission node -> resources
-                    for rid in target_resources:
-
-                        self.add_edge(
-                            f'rules[{ridx}]',
-                            [perm_id, rid, {
-                                "color": "#000000",
-                                "penwidth": "1",
-                                "arrowsize": "0.5"
-                            }]
-                        )
 
                    
 PLURAL2KINDS = {}
