@@ -691,9 +691,9 @@ OK - icônes vides ? -> problème identifié (pour l'exemple 4 : par ex cert-man
 
 OK - Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
 
-- mettre le noeud intermediaire "permissions" dans le cluster.
+OK - mettre le noeud intermediaire "permissions" dans le cluster.
 
-
+- 
 
 Autres tests plus simples : 
 - python3 bin/kube-diagrams examples/custom-object-items/config/custom-object-items.yaml -o test_output5.png
