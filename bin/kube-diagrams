@@ -1095,6 +1095,7 @@ class EdgesContext(list):
                 if target_resources:
 
                     perm_id = f"perm_{self.rid}_{ridx}_{kind}"
+                    perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
 
                     if perm_id not in diagram_nodes:
 

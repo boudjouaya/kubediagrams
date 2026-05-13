@@ -36,3 +36,12 @@ roleRef:
   name: mon-role
 
 ---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: Pod2
+  namespace: default
+spec:
+  containers:
+    - name: test
+      image: nginx:latest
