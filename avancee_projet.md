@@ -684,10 +684,12 @@ Option ajoutée :
 
 
 12/05 : 
-- Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
-- permissions qui vont vers aucune ressource (et parfois aucun rôle)  -> le problème vient du fait qu’on crée le nœud permission avant de vérifier si la ressource cible existe réellement dans le YAML (corrigé sauf pour permissions qui ont ni ressource ni rôle)
+
+OK - permissions qui vont vers aucune ressource (et parfois aucun rôle)  -> le problème vient du fait qu’on crée le nœud permission avant de vérifier si la ressource cible existe réellement dans le YAML 
 
 OK - icônes vides ? -> problème identifié (pour l'exemple 4 : par ex cert-manager-webhook:dynamic-serving) contient : qui est un caractère invalide dans un identifiant Graphviz , solution trouvée remplacer les caractères invalide
+
+- Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
 - noeud Pods -> pods spécifiques 
 - mettre le noeud intermediaire "permissions" dans le cluster.
 
