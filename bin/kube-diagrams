@@ -1101,10 +1101,32 @@ class EdgesContext(list):
                             diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
 
                     target_resources = [generic_id]
+                
+                permission_key = (
+                    namespace,
+                    api_version,
+                    kind,
+                    tuple(sorted(verbs)),
+                    tuple(sorted(target_resources))
+                )
 
-                # créer le nœud permission dans le bon cluster
-                perm_id = f"perm_{self.rid}_{ridx}_{kind}"
-                perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
+                # réutiliser le node si déjà créé
+                if permission_key in permission_nodes:
+
+                    perm_id = permission_nodes[permission_key]
+
+                else:
+
+                    perm_id = (
+                        f"perm_{namespace}_{kind}_"
+                        f"{'_'.join(sorted(verbs))}_"
+                        f"{abs(hash(str(sorted(target_resources))))}"
+                    )
+
+                    perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
+
+                    permission_nodes[permission_key] = perm_id
+
 
                 if perm_id not in diagram_nodes:
                     dot = diagrams.getdiagram().dot
@@ -1174,6 +1196,7 @@ class EdgesContext(list):
                     )
                    
 PLURAL2KINDS = {}
+permission_nodes = {}
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
         continue # skip this aliased node

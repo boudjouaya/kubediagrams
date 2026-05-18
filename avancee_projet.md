@@ -693,8 +693,18 @@ OK - Ajouter une flèche pour une ressource générale (ex 1 ressource 2 rôles)
 
 OK - mettre le noeud intermediaire "permissions" dans le cluster.
 
-- 
+
 
 Autres tests plus simples : 
 - python3 bin/kube-diagrams examples/custom-object-items/config/custom-object-items.yaml -o test_output5.png
 - python3 bin/kube-diagrams examples/opentelemetry-demo/downloads/opentelemetry-demo.yaml -o test_output6.png
+
+---
+
+18/05
+
+## Amélioration des diagrammes
+
+OK - Regroupement des permissions identiques : quand plusieurs rôles donnent les mêmes verbes sur la même ressource, un seul nœud intermédiaire est créé au lieu de dupliquer les nœuds → réduit les redondances visuelles.
+Limite:  le regroupement s'applique uniquement quand les permissions ciblent la même ressource.
+
