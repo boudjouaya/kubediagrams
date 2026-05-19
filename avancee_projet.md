@@ -708,3 +708,6 @@ Autres tests plus simples :
 OK - Regroupement des permissions identiques : quand plusieurs rôles donnent les mêmes verbes sur la même ressource, un seul nœud intermédiaire est créé au lieu de dupliquer les nœuds → réduit les redondances visuelles.
 Limite:  le regroupement s'applique uniquement quand les permissions ciblent la même ressource.
 
+- quand un rôle agit sur beaucoup de ressources , utiliser un seul nœud (icone) au lieu d’afficher toutes les ressources.
+
+- simplifier le diagramme RBAC en cachant ServiceAccount, RoleBinding et Role pour afficher directement les permissions appliquées à chaque workload (Deployment → permissions → ressources).
