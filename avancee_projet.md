@@ -711,3 +711,6 @@ Limite:  le regroupement s'applique uniquement quand les permissions ciblent la 
 - quand un rôle agit sur beaucoup de ressources , utiliser un seul nœud (icone) au lieu d’afficher toutes les ressources.
 
 - simplifier le diagramme RBAC en cachant ServiceAccount, RoleBinding et Role pour afficher directement les permissions appliquées à chaque workload (Deployment → permissions → ressources).
+
+pb : Le show: false dans kube-diagrams.yaml masque les nœuds mais add_rules() est appelée dans les edges du Role. Si le Role est masqué, ses edges ne sont plus exécutées → plus de nœuds permission créés.
+
