@@ -714,3 +714,11 @@ Limite:  le regroupement s'applique uniquement quand les permissions ciblent la 
 
 pb : Le show: false dans kube-diagrams.yaml masque les nœuds mais add_rules() est appelée dans les edges du Role. Si le Role est masqué, ses edges ne sont plus exécutées → plus de nœuds permission créés.
 
+Essai : modification du traitement des resourceNames : au lieu de créer une flèche par ressource nommée, on crée un seul nœud générique qui représente toutes les ressources de ce type, avec un label indiquant le nombre (ex: Services (10)).
+
+
+- Cacher ServiceAccount, RoleBinding et Role :
+Dans KubeDiagrams, les flèches RBAC sont générées via le script edges associé aux Role dans kube-diagrams.yaml. Si on masque ces nœuds, le script n'est plus exécuté. Pour contourner cela, il faudrait déplacer la logique de création des permissions dans les Workloads et remonter toute la chaîne ServiceAccount → RoleBinding → Role. Cela nécessite une refonte profonde de l'architecture de l'outil, bien trop lourde pour le projet.
+
+- Regrouper les resourceNames en un seul nœud :
+Essai de modification add_rules_resource_names() pour créer un nœud unique, mais ce nœud n'est pas attaché au bon cluster Graphviz et n'apparaît pas sur le diagramme final. La gestion des clusters dans KubeDiagrams ne permet pas facilement ce type de regroupement dynamique.
