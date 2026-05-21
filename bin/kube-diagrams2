@@ -1515,8 +1515,9 @@ def process_edges():
         Process diagram edges.
     """
     for resource_id, resource in resources.items():
-        if not get_node_config(resource).get("show", True):
-            continue # Skip this hidden resource.
+        is_rbac_role = resource.get('kind') in ('Role', 'ClusterRole')
+        if not get_node_config(resource).get("show", True) and not is_rbac_role:
+            continue
         edges = EdgesContext(resource_id, resource)
         # execute config code to generate edges
         code_to_exec = get_node_config(resource).get("edges")
