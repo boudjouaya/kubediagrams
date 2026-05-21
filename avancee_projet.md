@@ -720,5 +720,17 @@ Essai : modification du traitement des resourceNames : au lieu de créer une fl�
 - Cacher ServiceAccount, RoleBinding et Role :
 Dans KubeDiagrams, les flèches RBAC sont générées via le script edges associé aux Role dans kube-diagrams.yaml. Si on masque ces nœuds, le script n'est plus exécuté. Pour contourner cela, il faudrait déplacer la logique de création des permissions dans les Workloads et remonter toute la chaîne ServiceAccount → RoleBinding → Role. Cela nécessite une refonte profonde de l'architecture de l'outil, bien trop lourde pour le projet.
 
-- Regrouper les resourceNames en un seul nœud :
+❌- Regrouper les resourceNames en un seul nœud :
 Essai de modification add_rules_resource_names() pour créer un nœud unique, mais ce nœud n'est pas attaché au bon cluster Graphviz et n'apparaît pas sur le diagramme final. La gestion des clusters dans KubeDiagrams ne permet pas facilement ce type de regroupement dynamique.
+
+
+OK - Cacher ServiceAccount, RoleBinding et Role :
+-> Modification process_edges() pour que les Role et ClusterRole exécutent leurs edges même quand ils sont masqués. Ainsi, on peut cacher ces nœuds avec show: false sans perdre la génération des permissions. Le diagramme final ne montre plus que les Workloads, les nœuds Permissions et les ressources. (cacher les clusterRole aussi ?) -> à corriger éléments ok mais pas les flèches
+
+
+- Regroupement des ressources avec un seuil de regroupement
+
+Par défaut, THRESHOLD = 5 (par exemple) signifie :
+
+≤ 5 ressources → chaque ressource est affichée individuellement avec sa propre flèche
+> 5 ressources → les ressources sont regroupées sous un seul nœud nommé "{kind}s ({count})" (ex: "Pods (12)"), avec une seule flèche
