@@ -1,0 +1,92 @@
+# test-simplify.yaml
+# Namespace (pour que tout soit dans le même scope)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+
+---
+# ServiceAccount (sera masqué si show: false)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mon-sa
+  namespace: default
+
+---
+# Role (sera masqué si show: false)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: mon-role
+  namespace: default
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding (sera masqué si show: false)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: mon-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: mon-sa
+  namespace: default
+roleRef:
+  kind: Role
+  name: mon-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Deployment (Workload) - doit rester visible
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mon-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mon-app
+  template:
+    metadata:
+      labels:
+        app: mon-app
+    spec:
+      serviceAccountName: mon-sa
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+---
+# Pod (ressource cible) - doit rester visible
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mon-pod
+  namespace: default
+  labels:
+    app: mon-app
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest
+
+---
+# Un autre Pod pour tester le regroupement
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mon-pod-2
+  namespace: default
+  labels:
+    app: mon-app
+spec:
+  containers:
+  - name: nginx
+    image: nginx:latest

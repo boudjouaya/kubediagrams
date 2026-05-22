@@ -1187,15 +1187,39 @@ class EdgesContext(list):
                     node._cluster = diagrams.getcluster()
                     diagram_nodes[perm_id] = node
 
-                # flèche Role → nœud permission
-                self.add_edge(
-                    f'rules[{ridx}]',
-                    [perm_id, {
-                        "color": "#000000",
-                        "penwidth": "1.3",
-                        "arrowsize": "0.6"
-                    }]
-                )
+                # mode simplifié → remonter la chaîne pour trouver les Workloads
+                for rb_rid, rb_res in resources.items():
+                    if rb_res.get('kind') not in ('RoleBinding', 'ClusterRoleBinding'):
+                        continue
+                    # vérifier que ce RoleBinding pointe vers ce Role
+                    role_ref = rb_res.get('roleRef', {})
+                    if role_ref.get('name') != get_name(self.resource):
+                        continue
+                    # trouver les ServiceAccounts dans les subjects
+                    for subject in rb_res.get('subjects', []):
+                        if subject.get('kind') != 'ServiceAccount':
+                            continue
+                        sa_name = subject.get('name')
+                        sa_namespace = subject.get('namespace', self.namespace)
+                        # trouver le Workload qui utilise ce ServiceAccount
+                        for w_rid, w_res in resources.items():
+                            if w_res.get('kind') not in (
+                                'Deployment', 'StatefulSet', 'DaemonSet',
+                                'Job', 'CronJob', 'Pod'
+                            ):
+                                continue
+                            w_sa = query_path(w_res, "spec.template.spec.serviceAccountName")
+                            if w_sa == sa_name and get_namespace(w_res) == sa_namespace:
+                                if w_rid in diagram_nodes:
+                                    # flèche Workload → permission
+                                    self.add_edge(
+                                        f'rules[{ridx}]',
+                                        [w_rid, perm_id, {
+                                            "color": "#000000",
+                                            "penwidth": "1.3",
+                                            "arrowsize": "0.6"
+                                        }]
+                                    )
 
                 # flèches nœud permission → ressources cibles
                 for rid in target_resources:
@@ -1206,7 +1230,7 @@ class EdgesContext(list):
                             "penwidth": "1",
                             "arrowsize": "0.5"
                         }]
-                    )
+                )
                    
 PLURAL2KINDS = {}
 permission_nodes = {}
@@ -1307,6 +1331,7 @@ parser.add_argument(
     default=False
 )
 args = parser.parse_args()
+
 
 # Process arguments.
 if args.output is None:
@@ -1541,6 +1566,12 @@ def process_edges():
             edge_to = edge[1]
             edge_name = edge[2]
             try:
+                # si edge_from n'est pas dans diagram_nodes → skip
+                if edge_from not in diagram_nodes:
+                    continue
+                # si edge_to n'est pas dans diagram_nodes → skip
+                if edge_to not in diagram_nodes:
+                    continue
                 if isinstance(edge_name, dict):
                     edge_configuration = edge_name
                 else:
