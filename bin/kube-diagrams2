@@ -1040,7 +1040,7 @@ class EdgesContext(list):
             '</table>>'
         )
     
-    
+
     
     def add_rules(self):
         if self.resource.get('kind') not in ('Role', 'ClusterRole'):
@@ -1124,6 +1124,7 @@ class EdgesContext(list):
                     target_resources = [grouped_id]
 
                 permission_key = (
+                    self.rid,
                     namespace,
                     api_version,
                     kind,
@@ -1195,6 +1196,8 @@ class EdgesContext(list):
                     role_ref = rb_res.get('roleRef', {})
                     if role_ref.get('name') != get_name(self.resource):
                         continue
+                    if role_ref.get('kind') != self.resource.get('kind'):
+                        continue
                     # trouver les ServiceAccounts dans les subjects
                     for subject in rb_res.get('subjects', []):
                         if subject.get('kind') != 'ServiceAccount':
@@ -1212,6 +1215,13 @@ class EdgesContext(list):
                             if w_sa == sa_name and get_namespace(w_res) == sa_namespace:
                                 if w_rid in diagram_nodes:
                                     # flèche Workload → permission
+                                    edge_key = (w_rid, perm_id)
+
+                                    if edge_key in created_workload_permission_edges:
+                                        continue
+
+                                    created_workload_permission_edges.add(edge_key)
+
                                     self.add_edge(
                                         f'rules[{ridx}]',
                                         [w_rid, perm_id, {
@@ -1223,6 +1233,12 @@ class EdgesContext(list):
 
                 # flèches nœud permission → ressources cibles
                 for rid in target_resources:
+                    edge_key = (perm_id, rid)
+
+                    if edge_key in created_permission_edges:
+                      continue
+
+                    created_permission_edges.add(edge_key)
                     self.add_edge(
                         f'rules[{ridx}]',
                         [perm_id, rid, {
@@ -1234,6 +1250,8 @@ class EdgesContext(list):
                    
 PLURAL2KINDS = {}
 permission_nodes = {}
+created_permission_edges = set()
+created_workload_permission_edges = set()
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
         continue # skip this aliased node
