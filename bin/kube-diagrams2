@@ -1187,6 +1187,9 @@ class EdgesContext(list):
                     node._diagram = diagrams.getdiagram()
                     node._cluster = diagrams.getcluster()
                     diagram_nodes[perm_id] = node
+                    
+                    
+                workload_found = False
 
                 # mode simplifié → remonter la chaîne pour trouver les Workloads
                 for rb_rid, rb_res in resources.items():
@@ -1214,6 +1217,7 @@ class EdgesContext(list):
                             w_sa = query_path(w_res, "spec.template.spec.serviceAccountName")
                             if w_sa == sa_name and get_namespace(w_res) == sa_namespace:
                                 if w_rid in diagram_nodes:
+                                    workload_found = True
                                     # flèche Workload → permission
                                     edge_key = (w_rid, perm_id)
 
@@ -1247,6 +1251,16 @@ class EdgesContext(list):
                             "arrowsize": "0.5"
                         }]
                 )
+                    
+                if not workload_found and self.rid in diagram_nodes:
+                    self.add_edge(
+                        f'rules[{ridx}]',
+                        [perm_id, {
+                            "color": "#000000",
+                            "penwidth": "1.3",
+                            "arrowsize": "0.6"
+                        }]
+                    )
                    
 PLURAL2KINDS = {}
 permission_nodes = {}
