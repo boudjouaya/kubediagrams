@@ -745,6 +745,7 @@ Par défaut, THRESHOLD = 5 (par exemple) signifie :
 > 5 ressources → les ressources sont regroupées sous un seul nœud nommé "{kind}s ({count})" (ex: "Pods (12)"), avec une seule flèche
 Trop de ressources → regroupement
 
+OK - Suppression des arêtes dupliquées : ajout de clés uniques pour éviter de créer plusieurs fois la même flèche dans les graphes RBAC  → supprime les doublons sur les relations Workload → Permission et Permission → Ressource, améliore la lisibilité des diagrammes.
 
 
 - Au final add_rules fait :
@@ -752,8 +753,8 @@ Pour chaque règle d'un Role/ClusterRole, elle analyse les ressources ciblées (
 Elle crée un nœud permission unique par couple (verbes, ressources cibles)
 Si trop de ressources (> seuil) → regroupement en un seul nœud "Pods (15)"
 Si aucune ressource concrète → nœud générique "All Pods"
-Elle ajoute les flèches : soit Role → permission → ressources, soit en mode simplifié directement Workload → permission → ressources
-
+Elle ajoute les flèches : soit Role → permission → ressources, soit en mode simplifié directement Workload → permission → ress
+ources
 
 
 Clé de permission et réutilisation des nœuds permission_key : tuple unique qui identifie une permission spécifique
