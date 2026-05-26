@@ -725,12 +725,45 @@ Essai de modification add_rules_resource_names() pour créer un nœud unique, ma
 
 
 OK - Cacher ServiceAccount, RoleBinding et Role :
--> Modification process_edges() pour que les Role et ClusterRole exécutent leurs edges même quand ils sont masqués. Ainsi, on peut cacher ces nœuds avec show: false sans perdre la génération des permissions. Le diagramme final ne montre plus que les Workloads, les nœuds Permissions et les ressources. (cacher les clusterRole aussi ?) -> à corriger éléments ok mais pas les flèches
+-> Modification process_edges() pour que les Role et ClusterRole exécutent leurs edges même quand ils sont masqués. Ainsi, on peut cacher ces nœuds avec show: false sans perdre la génération des permissions. Le diagramme final ne montre plus que les Workloads, les nœuds Permissions et les ressources. (cacher les clusterRole et clusterRoleBinding aussi ?)
+si la ressource est masquée (show: false) et que ce n'est pas un Role/ClusterRole → on la skip comme avant.
+Mais si c'est un Role/ClusterRole masqué → on continue quand même l'exécution de ses edges pour que add_rules() soit appelée et que les nœuds permission soient créés
+
+- Pour cacher
+Parcourt les RoleBindings : cherche ceux qui pointent vers le Role/ClusterRole actuel
+Récupère les ServiceAccounts : dans les subjects du RoleBinding
+Cherche les Workloads : Deployment, StatefulSet, etc. qui utilisent ce ServiceAccount
+Crée la flèche : Workload → nœud permission (saute les intermédiaires)
+created_workload_permission_edges : évite les doublons
+
+
 
 
 - Regroupement des ressources avec un seuil de regroupement
-
 Par défaut, THRESHOLD = 5 (par exemple) signifie :
-
 ≤ 5 ressources → chaque ressource est affichée individuellement avec sa propre flèche
 > 5 ressources → les ressources sont regroupées sous un seul nœud nommé "{kind}s ({count})" (ex: "Pods (12)"), avec une seule flèche
+Trop de ressources → regroupement
+
+
+
+- Au final add_rules fait :
+Pour chaque règle d'un Role/ClusterRole, elle analyse les ressources ciblées (Pods, Services, etc.)
+Elle crée un nœud permission unique par couple (verbes, ressources cibles)
+Si trop de ressources (> seuil) → regroupement en un seul nœud "Pods (15)"
+Si aucune ressource concrète → nœud générique "All Pods"
+Elle ajoute les flèches : soit Role → permission → ressources, soit en mode simplifié directement Workload → permission → ressources
+
+
+
+Clé de permission et réutilisation des nœuds permission_key : tuple unique qui identifie une permission spécifique
+
+
+
+
+
+26/05 
+
+-> enlever les kinds(nombre) on garde seulement les All ....
+-> vérifier les fichiers YAML avec les diagrammes générés
+-> Écrire le rapport + rapport en anglais
