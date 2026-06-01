@@ -36,6 +36,8 @@ SUPPORTED_OUTPUT_FORMATS = (
     "dot", "dot_json", "drawio", "gif", "jp2", "jpe", "jpeg", "jpg", "pdf", "png",
     "svg", "tif", "tiff"
 )
+
+
 class Diagram(diagrams.Diagram):
     """
         Enhancement of the Diagram class to add new output formats.
@@ -1000,7 +1002,7 @@ class EdgesContext(list):
                         api_version,
                         "REFERENCE-UP"
                     )
-                    
+
     def generate_label(self, verbs):
         mapping = {
             "get": ("G", "#F9A825"),
@@ -1012,8 +1014,8 @@ class EdgesContext(list):
             "patch": ("P", "#78909C"),
             "deletecollection": ("DC", "#37474F"),
             "*": ("★", "#FB8C00")
-    }
-        
+        }
+
         colored = []
         for v in verbs:
             if v in mapping:
@@ -1021,24 +1023,22 @@ class EdgesContext(list):
                 colored.append(f'<font color="{color}"><b>{letter}</b></font>')
             else:
                 colored.append(v[0].upper())
-        
+
         verbs_line = " ".join(colored)
 
         return (
             '<<table border="0" cellborder="0" cellspacing="2" cellpadding="0.01">'
-            '<tr>'  
-            f'<td align="center" bgcolor="#FFFFFF" style="rounded">{verbs_line}</td>'   
+            '<tr>'
+            f'<td align="center" bgcolor="#FFFFFF" style="rounded">{verbs_line}</td>'
             '</tr>'
             '<tr>'
-           '<td align="center">'
+            '<td align="center">'
             '<font point-size="13" color="#FFFFFF">permissions</font>'
             '</td>'
             '</tr>'
             '</table>>'
         )
-    
-    
-    
+
     def add_rules(self):
         if self.resource.get('kind') not in ('Role', 'ClusterRole'):
             return
@@ -1085,27 +1085,83 @@ class EdgesContext(list):
                         continue
                     target_resources.append(rid)
 
-                # si aucune ressource concrète → créer/réutiliser un nœud générique
-                if not target_resources:
+                # si aucune ressource concrète → on utilisera un nœud générique "All Kinds"
+                # (créé plus bas, seulement si le nœud permission est effectivement utilisé)
+                use_generic = not target_resources
+                if use_generic:
                     generic_id = f"generic_{kind}"
                     generic_id = generic_id.replace(":", "_").replace("/", "_").replace("-", "_")
-
-                    if generic_id not in diagram_nodes:
-                        node_classname = node_config.get("diagram_node_classname")
-                        if node_classname:
-                            idx = node_classname.rfind('.')
-                            module = importlib.import_module(node_classname[:idx])
-                            diagram_node_class = getattr(module, node_classname[idx+1:])
-                            diagram_nodes[generic_id] = diagram_node_class(f"All {kind}s")
-                        else:
-                            diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
-
                     target_resources = [generic_id]
 
-                # créer le nœud permission dans le bon cluster
-                perm_id = f"perm_{self.rid}_{ridx}_{kind}"
-                perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
+                permission_key = (
+                    self.rid,
+                    namespace,
+                    api_version,
+                    kind,
+                    tuple(sorted(verbs)),
+                    tuple(sorted(target_resources))
+                )
 
+                # calculer le perm_id (sans créer le nœud encore)
+                if permission_key in permission_nodes:
+                    perm_id = permission_nodes[permission_key]
+                else:
+                    perm_id = (
+                        f"perm_{namespace}_{kind}_"
+                        f"{'_'.join(sorted(verbs))}_"
+                        f"{abs(hash(str(sorted(target_resources))))}"
+                    )
+                    perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
+                    permission_nodes[permission_key] = perm_id
+
+                # --- 1. Chercher les flèches entrantes (workloads) AVANT de créer le nœud ---
+                incoming_workload_edges = []  # liste de (w_rid, perm_id)
+
+                for rb_rid, rb_res in resources.items():
+                    if rb_res.get('kind') not in ('RoleBinding', 'ClusterRoleBinding'):
+                        continue
+                    role_ref = rb_res.get('roleRef', {})
+                    if role_ref.get('name') != get_name(self.resource):
+                        continue
+                    if role_ref.get('kind') != self.resource.get('kind'):
+                        continue
+                    for subject in rb_res.get('subjects', []):
+                        if subject.get('kind') != 'ServiceAccount':
+                            continue
+                        sa_name = subject.get('name')
+                        sa_namespace = subject.get('namespace', self.namespace)
+                        for w_rid, w_res in resources.items():
+                            if w_res.get('kind') not in (
+                                'Deployment', 'StatefulSet', 'DaemonSet',
+                                'Job', 'CronJob', 'Pod'
+                            ):
+                                continue
+                            w_sa = query_path(w_res, "spec.template.spec.serviceAccountName")
+                            if w_sa == sa_name and get_namespace(w_res) == sa_namespace:
+                                if w_rid in diagram_nodes:
+                                    edge_key = (w_rid, perm_id)
+                                    if edge_key not in created_workload_permission_edges:
+                                        incoming_workload_edges.append(edge_key)
+
+                # fallback : le role lui-même est visible dans le diagramme
+                role_visible = self.rid in diagram_nodes
+
+                # --- 2. Ignorer ce nœud permission s'il n'a aucune flèche entrante ---
+                if not incoming_workload_edges and not role_visible:
+                    continue
+
+                # --- 3. Créer le nœud générique "All Kinds" si nécessaire ---
+                if use_generic and generic_id not in diagram_nodes:
+                    node_classname = node_config.get("diagram_node_classname")
+                    if node_classname:
+                        idx = node_classname.rfind('.')
+                        module = importlib.import_module(node_classname[:idx])
+                        diagram_node_class = getattr(module, node_classname[idx+1:])
+                        diagram_nodes[generic_id] = diagram_node_class(f"All {kind}s")
+                    else:
+                        diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
+
+                # --- 4. Créer le nœud permission si pas encore fait ---
                 if perm_id not in diagram_nodes:
                     dot = diagrams.getdiagram().dot
 
@@ -1152,18 +1208,38 @@ class EdgesContext(list):
                     node._cluster = diagrams.getcluster()
                     diagram_nodes[perm_id] = node
 
-                # flèche Role → nœud permission
-                self.add_edge(
-                    f'rules[{ridx}]',
-                    [perm_id, {
-                        "color": "#000000",
-                        "penwidth": "1.3",
-                        "arrowsize": "0.6"
-                    }]
-                )
+                # --- 5. Ajouter les flèches entrantes workload → permission ---
+                for edge_key in incoming_workload_edges:
+                    w_rid, _ = edge_key
+                    created_workload_permission_edges.add(edge_key)
+                    self.add_edge(
+                        f'rules[{ridx}]',
+                        [w_rid, perm_id, {
+                            "color": "#000000",
+                            "penwidth": "1.3",
+                            "arrowsize": "0.6"
+                        }]
+                    )
 
-                # flèches nœud permission → ressources cibles
+                # fallback : flèche role → permission si pas de workload (étape 5 suite)
+                if not incoming_workload_edges and role_visible:
+                    self.add_edge(
+                        f'rules[{ridx}]',
+                        [perm_id, {
+                            "color": "#000000",
+                            "penwidth": "1.3",
+                            "arrowsize": "0.6"
+                        }]
+                    )
+
+                # --- 6. Flèches nœud permission → ressources cibles ---
                 for rid in target_resources:
+                    edge_key = (perm_id, rid)
+
+                    if edge_key in created_permission_edges:
+                        continue
+
+                    created_permission_edges.add(edge_key)
                     self.add_edge(
                         f'rules[{ridx}]',
                         [perm_id, rid, {
@@ -1172,8 +1248,12 @@ class EdgesContext(list):
                             "arrowsize": "0.5"
                         }]
                     )
-                   
+
+
 PLURAL2KINDS = {}
+permission_nodes = {}
+created_permission_edges = set()
+created_workload_permission_edges = set()
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
         continue # skip this aliased node
@@ -1207,7 +1287,7 @@ def create_node_for_role_rules_resource_names(role, nodes):
             api_version = "v1"
         else:
             api_version = f"{api_group}/v1"
-        for resource in query_path(rule, "resources", []):
+        for resource in query_path(role, "resources", []):
             if '/' in resource:
                 continue # skip subresources
             resource_kind = PLURAL2KINDS.get(resource)
@@ -1479,7 +1559,8 @@ def process_edges():
         Process diagram edges.
     """
     for resource_id, resource in resources.items():
-        if not get_node_config(resource).get("show", True):
+        is_rbac_role = resource.get('kind') in ('Role', 'ClusterRole')
+        if not get_node_config(resource).get("show", True) and not is_rbac_role:
             continue # Skip this hidden resource.
         edges = EdgesContext(resource_id, resource)
         # execute config code to generate edges
@@ -1504,6 +1585,12 @@ def process_edges():
             edge_to = edge[1]
             edge_name = edge[2]
             try:
+                # si edge_from n'est pas dans diagram_nodes → skip
+                if edge_from not in diagram_nodes:
+                    continue
+                # si edge_to n'est pas dans diagram_nodes → skip
+                if edge_to not in diagram_nodes:
+                    continue
                 if isinstance(edge_name, dict):
                     edge_configuration = edge_name
                 else:
@@ -1622,8 +1709,7 @@ def create_rbac_legend():
         "labelloc": "b",
         "labeljust": "l",
         "margin": "2",
-     
-    })        
+    })
 
 # Generate diagram
 generate_diagram_in_cluster = query_path(config, "diagram.generate_diagram_in_cluster")
@@ -1634,7 +1720,7 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
 
     # Generate diagram edges
     process_edges()
-    
+
     # Check if RBAC resources are present to display the legend if requested
     has_rbac = any(
         r.get("kind") in ("Role", "ClusterRole")
@@ -1643,7 +1729,7 @@ with Diagram("", filename=args.output, show=False, direction="TB", outformat=arg
 
     if args.show_rbac_legend and has_rbac:
         create_rbac_legend()
-        
+
     # Create custom edges
     for edge_idx, custom_edge in enumerate(query_path(config, "diagram.edges", [])):
         custom_edge_from = custom_edge.get("from")
