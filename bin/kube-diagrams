@@ -1102,7 +1102,7 @@ class EdgesContext(list):
                     tuple(sorted(target_resources))
                 )
 
-                # calculer le perm_id (sans créer le nœud encore)
+             
                 if permission_key in permission_nodes:
                     perm_id = permission_nodes[permission_key]
                 else:
@@ -1114,7 +1114,7 @@ class EdgesContext(list):
                     perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
                     permission_nodes[permission_key] = perm_id
 
-                # --- 1. Chercher les flèches entrantes (workloads) AVANT de créer le nœud ---
+              
                 incoming_workload_edges = []  # liste de (w_rid, perm_id)
 
                 for rb_rid, rb_res in resources.items():
@@ -1143,14 +1143,14 @@ class EdgesContext(list):
                                     if edge_key not in created_workload_permission_edges:
                                         incoming_workload_edges.append(edge_key)
 
-                # fallback : le role lui-même est visible dans le diagramme
+                
                 role_visible = self.rid in diagram_nodes
 
-                # --- 2. Ignorer ce nœud permission s'il n'a aucune flèche entrante ---
+                # Ignorer ce nœud permission s'il n'a aucune flèche entrante 
                 if not incoming_workload_edges and not role_visible:
                     continue
 
-                # --- 3. Créer le nœud générique "All Kinds" si nécessaire ---
+                # Créer le nœud générique "All Kinds" si nécessaire
                 if use_generic and generic_id not in diagram_nodes:
                     node_classname = node_config.get("diagram_node_classname")
                     if node_classname:
@@ -1161,7 +1161,7 @@ class EdgesContext(list):
                     else:
                         diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
 
-                # --- 4. Créer le nœud permission si pas encore fait ---
+                # Créer le nœud permission si pas encore fait 
                 if perm_id not in diagram_nodes:
                     dot = diagrams.getdiagram().dot
 
@@ -1208,7 +1208,7 @@ class EdgesContext(list):
                     node._cluster = diagrams.getcluster()
                     diagram_nodes[perm_id] = node
 
-                # --- 5. Ajouter les flèches entrantes workload → permission ---
+                #  Ajouter les flèches entrantes workload → permission
                 for edge_key in incoming_workload_edges:
                     w_rid, _ = edge_key
                     created_workload_permission_edges.add(edge_key)
@@ -1221,7 +1221,7 @@ class EdgesContext(list):
                         }]
                     )
 
-                # fallback : flèche role → permission si pas de workload (étape 5 suite)
+            
                 if not incoming_workload_edges and role_visible:
                     self.add_edge(
                         f'rules[{ridx}]',
@@ -1232,7 +1232,7 @@ class EdgesContext(list):
                         }]
                     )
 
-                # --- 6. Flèches nœud permission → ressources cibles ---
+                # Flèches nœud permission → ressources cibles 
                 for rid in target_resources:
                     edge_key = (perm_id, rid)
 
@@ -1256,7 +1256,7 @@ created_permission_edges = set()
 created_workload_permission_edges = set()
 for k, v in config["nodes"].items():
     if not isinstance(v, dict):
-        continue # skip this aliased node
+        continue 
     node_kind = k.split("/")[0]
     plural = v.get("plural")
     if plural is None:
@@ -1349,6 +1349,12 @@ parser.add_argument(
     help="display RBAC permissions legend",
     action="store_true",
     default=False
+)
+parser.add_argument(
+    "--simplify-rbac",
+    action="store_true",
+    default=False,
+    help="hide Role, RoleBinding and ServiceAccount nodes"
 )
 args = parser.parse_args()
 
@@ -1616,11 +1622,20 @@ def create_nodes(cluster):
         Create diagram nodes and clusters recursively.
     """
     for rid, resource in cluster.resources.items():
+        if args.simplify_rbac and resource.get("kind") in (
+            "Role",
+            "ClusterRole",
+            "RoleBinding",
+            "ClusterRoleBinding",
+            "ServiceAccount"
+        ):
+            continue       
         if get_node_config(resource).get("show", True):
             diagram_nodes[rid] = create_diagram_node(resource)
     for cid, sub_cluster in cluster.clusters.items():
         with Cluster(cid, graph_attr=sub_cluster.graph_attr):
             create_nodes(sub_cluster)
+            
 
 def create_custom_node(node_id, node_def):
     """

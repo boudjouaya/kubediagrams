@@ -122,7 +122,6 @@ nodes:           # config de chaque ressource
   APIService/apiregistration.k8s.io/v1beta1: APIService/apiregistration.k8s.io/v1
   
   ClusterRole/rbac.authorization.k8s.io/v1:
-    show: false
     scope: Cluster
     diagram_node_classname: diagrams.k8s.rbac.CRole
     edges: |
@@ -139,7 +138,6 @@ nodes:           # config de chaque ressource
   ClusterRole/rbac.authorization.k8s.io/v1beta1: ClusterRole/rbac.authorization.k8s.io/v1
 
   ClusterRoleBinding/rbac.authorization.k8s.io/v1:
-    show: false
     scope: Cluster
     diagram_node_classname: diagrams.k8s.rbac.CRB
     edges: |
@@ -590,7 +588,6 @@ nodes:           # config de chaque ressource
     # no edges
 
   Role/rbac.authorization.k8s.io/v1:
-    show: false
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.rbac.Role
     nodes: |
@@ -602,7 +599,6 @@ nodes:           # config de chaque ressource
   Role/rbac.authorization.k8s.io/v1beta1: Role/rbac.authorization.k8s.io/v1
 
   RoleBinding/rbac.authorization.k8s.io/v1:
-    show: false
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.rbac.RB
     edges: |
@@ -625,7 +621,6 @@ nodes:           # config de chaque ressource
       edges.add_edges_for_service()
 
   ServiceAccount/v1:
-    show: false
     scope: Namespaced
     diagram_node_classname: diagrams.k8s.rbac.SA
     # no edges
