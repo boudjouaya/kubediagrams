@@ -768,3 +768,14 @@ Clé de permission et réutilisation des nœuds permission_key : tuple unique qu
 -> enlever les kinds(nombre) on garde seulement les All ....
 -> vérifier les fichiers YAML avec les diagrammes générés
 -> Écrire le rapport + rapport en anglais
+
+
+
+01/06
+
+-> ajout de l'arg --simplify-rbac
+-> vérifier les fichiers YAML avec les diagrammes générés
+-> préparer soutenance
+-> rassembler les noeuds permissions (workload - ressources)
+
+
