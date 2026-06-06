@@ -1,13 +1,3 @@
-En comparant les deux, voici ce qui manque dans le README que je t'ai donné :
-
-1. **Le regroupement avec seuil (THRESHOLD)** — mentionné dans l'original (18/05) mais absent du README final
-2. **La section "Au final add_rules fait"** — résumé complet du comportement final de add_rules, absent
-3. **La fusion des nœuds permission abandonnée** (01/06) — c'est ce qu'on vient d'ajouter mais qui manquait
-
-Voici le README complet corrigé :
-
----
-
 # Suivi de projet — Visualisation RBAC dans KubeDiagrams
 Aya Boudjou & Asma Benyahia
 
