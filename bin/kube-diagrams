@@ -1086,7 +1086,6 @@ class EdgesContext(list):
                     target_resources.append(rid)
 
                 # si aucune ressource concrète → on utilisera un nœud générique "All Kinds"
-                # (créé plus bas, seulement si le nœud permission est effectivement utilisé)
                 use_generic = not target_resources
                 if use_generic:
                     generic_id = f"generic_{kind}"
@@ -1102,7 +1101,6 @@ class EdgesContext(list):
                     tuple(sorted(target_resources))
                 )
 
-             
                 if permission_key in permission_nodes:
                     perm_id = permission_nodes[permission_key]
                 else:
@@ -1114,8 +1112,8 @@ class EdgesContext(list):
                     perm_id = perm_id.replace(":", "_").replace("/", "_").replace("-", "_")
                     permission_nodes[permission_key] = perm_id
 
-              
-                incoming_workload_edges = []  # liste de (w_rid, perm_id)
+                # chercher les flèches Workload → permission
+                incoming_workload_edges = []
 
                 for rb_rid, rb_res in resources.items():
                     if rb_res.get('kind') not in ('RoleBinding', 'ClusterRoleBinding'):
@@ -1143,12 +1141,15 @@ class EdgesContext(list):
                                     if edge_key not in created_workload_permission_edges:
                                         incoming_workload_edges.append(edge_key)
 
-                
                 role_visible = self.rid in diagram_nodes
 
-                # Ignorer ce nœud permission s'il n'a aucune flèche entrante 
-                if not incoming_workload_edges and not role_visible:
-                    continue
+                # Ignorer ce nœud permission s'il n'a aucune flèche entrante
+                if args.simplify_rbac:
+                    if not incoming_workload_edges:
+                        continue  # en mode simplifié, sans workload → rien à afficher
+                else:
+                    if not role_visible:
+                        continue  # en mode normal, sans Role visible → rien à afficher
 
                 # Créer le nœud générique "All Kinds" si nécessaire
                 if use_generic and generic_id not in diagram_nodes:
@@ -1161,12 +1162,11 @@ class EdgesContext(list):
                     else:
                         diagram_nodes[generic_id] = ManagedServices(f"All {kind}s")
 
-                # Créer le nœud permission si pas encore fait 
+                # Créer le nœud permission si pas encore fait
                 if perm_id not in diagram_nodes:
                     dot = diagrams.getdiagram().dot
 
                     if scope == 'Namespaced':
-                        # créer dans le sous-graphe du namespace
                         cluster_name = f"cluster_Namespace: {self.namespace}"
                         with dot.subgraph(name=cluster_name) as subgraph:
                             subgraph.node(
@@ -1185,7 +1185,6 @@ class EdgesContext(list):
                                 labelloc="c"
                             )
                     else:
-                        # ClusterRole → graphe racine
                         dot.node(
                             perm_id,
                             label=label,
@@ -1208,31 +1207,33 @@ class EdgesContext(list):
                     node._cluster = diagrams.getcluster()
                     diagram_nodes[perm_id] = node
 
-                #  Ajouter les flèches entrantes workload → permission
-                for edge_key in incoming_workload_edges:
-                    w_rid, _ = edge_key
-                    created_workload_permission_edges.add(edge_key)
-                    self.add_edge(
-                        f'rules[{ridx}]',
-                        [w_rid, perm_id, {
-                            "color": "#000000",
-                            "penwidth": "1.3",
-                            "arrowsize": "0.6"
-                        }]
-                    )
+                # Flèches entrantes → permission
+                if args.simplify_rbac:
+                    # mode simplifié → flèches Workload → permission UNIQUEMENT
+                    for edge_key in incoming_workload_edges:
+                        w_rid, _ = edge_key
+                        created_workload_permission_edges.add(edge_key)
+                        self.add_edge(
+                            f'rules[{ridx}]',
+                            [w_rid, perm_id, {
+                                "color": "#000000",
+                                "penwidth": "1.3",
+                                "arrowsize": "0.6"
+                            }]
+                        )
+                else:
+                    # mode normal → flèche Role → permission UNIQUEMENT
+                    if role_visible:
+                        self.add_edge(
+                            f'rules[{ridx}]',
+                            [perm_id, {
+                                "color": "#000000",
+                                "penwidth": "1.3",
+                                "arrowsize": "0.6"
+                            }]
+                        )
 
-            
-                if not incoming_workload_edges and role_visible:
-                    self.add_edge(
-                        f'rules[{ridx}]',
-                        [perm_id, {
-                            "color": "#000000",
-                            "penwidth": "1.3",
-                            "arrowsize": "0.6"
-                        }]
-                    )
-
-                # Flèches nœud permission → ressources cibles 
+                # Flèches nœud permission → ressources cibles (dans les deux modes)
                 for rid in target_resources:
                     edge_key = (perm_id, rid)
 
